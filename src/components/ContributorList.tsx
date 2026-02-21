@@ -34,27 +34,27 @@ const ContributorList = ({ contributors, repoName, loading, progress, enriching,
 
   return (
     <div className="bg-card border border-border rounded-lg overflow-hidden animate-fade-in shadow-[0_0_30px_hsl(152_68%_50%/0.06)]">
-      <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-gradient-to-r from-primary/5 to-accent/5">
-        <div className="flex items-center gap-2 font-mono text-sm">
-          <Users className="h-4 w-4 text-primary" />
+      <div className="flex flex-wrap items-center gap-3 px-5 py-4 border-b border-border bg-gradient-to-r from-primary/5 to-accent/5">
+        <div className="flex items-center gap-2 font-mono text-sm min-w-0 flex-1">
+          <Users className="h-4 w-4 text-primary shrink-0" />
           <span className="text-foreground font-semibold">{contributors.length}</span>
-          <span className="text-muted-foreground">contributors in</span>
-          <span className="text-accent">{repoName}</span>
-          {enriching && enrichProgress && (
-            <span className="text-muted-foreground ml-2 inline-flex items-center gap-1">
-              · {enrichPaused ? "paused" : "enriching"} {enrichProgress.current}/{enrichProgress.total}
-              {!enrichPaused && (
-                <span className="inline-block h-3 w-3 ml-1 border-2 border-primary border-t-transparent rounded-full animate-spin align-middle" />
-              )}
-              <button
-                onClick={onTogglePause}
-                className="ml-2 px-2 py-0.5 text-xs font-mono text-accent border border-accent/30 rounded hover:bg-accent/10 transition-colors"
-              >
-                {enrichPaused ? "Resume" : "Pause"}
-              </button>
-            </span>
-          )}
+          <span className="text-muted-foreground">in</span>
+          <span className="text-accent truncate">{repoName}</span>
         </div>
+        {enriching && enrichProgress && (
+          <div className="flex items-center gap-2 font-mono text-xs text-muted-foreground">
+            <span>{enrichPaused ? "paused" : "enriching"} {enrichProgress.current}/{enrichProgress.total}</span>
+            {!enrichPaused && (
+              <span className="inline-block h-3 w-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            )}
+            <button
+              onClick={onTogglePause}
+              className="px-2 py-0.5 text-xs font-mono text-accent border border-accent/30 rounded hover:bg-accent/10 transition-colors"
+            >
+              {enrichPaused ? "Resume" : "Pause"}
+            </button>
+          </div>
+        )}
         <button
           onClick={handleExport}
           className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground font-mono text-xs font-semibold rounded-md hover:opacity-90 transition-opacity"
