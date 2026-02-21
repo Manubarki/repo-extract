@@ -118,20 +118,24 @@ export async function getContributors(
   return allContributors;
 }
 
+export interface EnrichControl {
+  paused: boolean;
+}
+
 export async function enrichContributors(
   contributors: GitHubContributor[],
   token?: string,
   onProgress?: (enriched: number, total: number, partialResults?: GitHubContributor[]) => void,
-  signal?: AbortSignal
+  control?: EnrichControl
 ): Promise<GitHubContributor[]> {
   const enriched: GitHubContributor[] = [];
   const toEnrich = contributors.filter((c) => !c.isAnonymous && c.login !== "anonymous");
   const alreadyAnon = contributors.filter((c) => c.isAnonymous || c.login === "anonymous");
 
   for (let i = 0; i < toEnrich.length; i++) {
-    if (signal?.aborted) {
-      enriched.push(...toEnrich.slice(i).map((r) => ({ ...r, enriched: false })));
-      break;
+    // Wait while paused
+    while (control?.paused) {
+      await new Promise((r) => setTimeout(r, 200));
     }
     const c = toEnrich[i];
 

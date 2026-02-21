@@ -9,10 +9,11 @@ interface ContributorListProps {
   progress: { current: number; remaining: number | null } | null;
   enriching?: boolean;
   enrichProgress?: { current: number; total: number } | null;
-  onStopEnrich?: () => void;
+  enrichPaused?: boolean;
+  onTogglePause?: () => void;
 }
 
-const ContributorList = ({ contributors, repoName, loading, progress, enriching, enrichProgress, onStopEnrich }: ContributorListProps) => {
+const ContributorList = ({ contributors, repoName, loading, progress, enriching, enrichProgress, enrichPaused, onTogglePause }: ContributorListProps) => {
   if (loading) {
     return (
       <div className="bg-card border border-border rounded-lg p-8 text-center animate-fade-in">
@@ -41,13 +42,15 @@ const ContributorList = ({ contributors, repoName, loading, progress, enriching,
           <span className="text-accent">{repoName}</span>
           {enriching && enrichProgress && (
             <span className="text-muted-foreground ml-2 inline-flex items-center gap-1">
-              · enriching {enrichProgress.current}/{enrichProgress.total}
-              <span className="inline-block h-3 w-3 ml-1 border-2 border-primary border-t-transparent rounded-full animate-spin align-middle" />
+              · {enrichPaused ? "paused" : "enriching"} {enrichProgress.current}/{enrichProgress.total}
+              {!enrichPaused && (
+                <span className="inline-block h-3 w-3 ml-1 border-2 border-primary border-t-transparent rounded-full animate-spin align-middle" />
+              )}
               <button
-                onClick={onStopEnrich}
-                className="ml-2 px-2 py-0.5 text-xs font-mono text-destructive border border-destructive/30 rounded hover:bg-destructive/10 transition-colors"
+                onClick={onTogglePause}
+                className="ml-2 px-2 py-0.5 text-xs font-mono text-accent border border-accent/30 rounded hover:bg-accent/10 transition-colors"
               >
-                Stop
+                {enrichPaused ? "Resume" : "Pause"}
               </button>
             </span>
           )}
