@@ -5,7 +5,7 @@ import RepoCard from "@/components/RepoCard";
 import ContributorList from "@/components/ContributorList";
 import TokenInput from "@/components/TokenInput";
 import { GitHubRepo, GitHubContributor } from "@/types/github";
-import { searchRepos, getContributors } from "@/lib/github";
+import { searchRepos, getContributors, enrichContributors } from "@/lib/github";
 
 const Index = () => {
   const [repos, setRepos] = useState<GitHubRepo[]>([]);
@@ -15,8 +15,10 @@ const Index = () => {
 
   const [contributors, setContributors] = useState<GitHubContributor[]>([]);
   const [extracting, setExtracting] = useState<string | null>(null);
+  const [enriching, setEnriching] = useState(false);
   const [extractRepoName, setExtractRepoName] = useState("");
   const [progress, setProgress] = useState<{ current: number; remaining: number | null } | null>(null);
+  const [enrichProgress, setEnrichProgress] = useState<{ current: number; total: number } | null>(null);
 
   const handleSearch = async (query: string) => {
     setSearchLoading(true);
@@ -39,6 +41,7 @@ const Index = () => {
     setContributors([]);
     setExtractRepoName(repo.full_name);
     setProgress(null);
+    setEnrichProgress(null);
     setError(null);
     try {
       const result = await getContributors(
@@ -48,11 +51,24 @@ const Index = () => {
         (count, remaining) => setProgress({ current: count, remaining })
       );
       setContributors(result);
+      setExtracting(null);
+      setProgress(null);
+
+      // Auto-enrich
+      setEnriching(true);
+      const enriched = await enrichContributors(
+        result,
+        token || undefined,
+        (current, total) => setEnrichProgress({ current, total })
+      );
+      setContributors(enriched);
     } catch (e: any) {
       setError(e.message);
     } finally {
       setExtracting(null);
+      setEnriching(false);
       setProgress(null);
+      setEnrichProgress(null);
     }
   };
 
@@ -90,13 +106,15 @@ const Index = () => {
         )}
 
         {/* Contributors */}
-        {(contributors.length > 0 || extracting) && (
+      {(contributors.length > 0 || extracting || enriching) && (
           <div className="mb-8">
             <ContributorList
               contributors={contributors}
               repoName={extractRepoName}
               loading={!!extracting}
               progress={progress}
+              enriching={enriching}
+              enrichProgress={enrichProgress}
             />
           </div>
         )}

@@ -126,12 +126,57 @@ export async function getContributors(
   return allContributors;
 }
 
+export async function enrichContributors(
+  contributors: GitHubContributor[],
+  token?: string,
+  onProgress?: (enriched: number, total: number) => void
+): Promise<GitHubContributor[]> {
+  const enriched: GitHubContributor[] = [];
+  const toEnrich = contributors.filter((c) => !c.isAnonymous && c.login !== "anonymous");
+  const alreadyAnon = contributors.filter((c) => c.isAnonymous || c.login === "anonymous");
+
+  for (let i = 0; i < toEnrich.length; i++) {
+    const c = toEnrich[i];
+
+    // Rate limit guard
+    if (rateLimitRemaining !== null && rateLimitRemaining <= getSafetyBuffer()) {
+      console.warn(`Rate limit guard during enrichment at ${i}/${toEnrich.length}. Returning partial.`);
+      enriched.push(...toEnrich.slice(i).map((r) => ({ ...r, enriched: false })));
+      break;
+    }
+
+    try {
+      const res = await fetchWithRateLimit(`${GITHUB_API}/users/${c.login}`, token);
+      const profile = await res.json();
+      enriched.push({
+        ...c,
+        name: profile.name || null,
+        bio: profile.bio || null,
+        company: profile.company || null,
+        blog: profile.blog || null,
+        twitter_username: profile.twitter_username || null,
+        location: profile.location || null,
+        enriched: true,
+      });
+    } catch {
+      enriched.push({ ...c, enriched: false });
+    }
+
+    onProgress?.(i + 1, toEnrich.length);
+    if (i < toEnrich.length - 1) {
+      await new Promise((r) => setTimeout(r, THROTTLE_MS));
+    }
+  }
+
+  return [...enriched, ...alreadyAnon.map((c) => ({ ...c, enriched: false }))];
+}
+
 export function contributorsToCsv(contributors: GitHubContributor[], repoName: string): string {
-  const header = "Repository,Username,Profile URL,Contributions,Type\n";
+  const header = "Repository,Username,Full Name,Profile URL,Contributions,Type,Company,Twitter,Blog,Location,Bio\n";
   const rows = contributors
     .map(
       (c) =>
-        `"${repoName}","${c.login}","${c.html_url}",${c.contributions},"${c.isAnonymous ? "Anonymous" : "User"}"`
+        `"${repoName}","${c.login}","${c.name || ""}","${c.html_url}",${c.contributions},"${c.isAnonymous ? "Anonymous" : "User"}","${c.company || ""}","${c.twitter_username ? `https://twitter.com/${c.twitter_username}` : ""}","${c.blog || ""}","${c.location || ""}","${(c.bio || "").replace(/"/g, '""')}"`
     )
     .join("\n");
   return header + rows;
