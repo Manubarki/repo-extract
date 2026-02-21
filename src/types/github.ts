@@ -22,6 +22,14 @@ export interface GitHubContributor {
   contributions: number;
   type: string;
   isAnonymous?: boolean;
+  // Enriched profile fields
+  name?: string | null;
+  bio?: string | null;
+  company?: string | null;
+  blog?: string | null;
+  twitter_username?: string | null;
+  location?: string | null;
+  enriched?: boolean;
 }
 
 export interface SearchState {
