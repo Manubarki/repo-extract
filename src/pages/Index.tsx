@@ -121,12 +121,13 @@ const Index = () => {
             <h2 className="font-mono text-xs text-muted-foreground uppercase tracking-wider mb-3">
               Repositories
             </h2>
-            {repos.map((repo) => (
+            {repos.map((repo, i) => (
               <RepoCard
                 key={repo.id}
                 repo={repo}
                 onExtract={handleExtract}
                 extracting={extracting === repo.full_name}
+                index={i}
               />
             ))}
           </div>
