@@ -16,6 +16,7 @@ const Index = () => {
   const [searchLoading, setSearchLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [token, setToken] = useState(() => localStorage.getItem("gh_token") || "");
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const [contributors, setContributors] = useState<GitHubContributor[]>([]);
   const [extracting, setExtracting] = useState<string | null>(null);
@@ -82,7 +83,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
       <div className="absolute top-4 right-4 flex items-center gap-2">
-        <Popover>
+        <Popover open={settingsOpen} onOpenChange={setSettingsOpen}>
           <PopoverTrigger asChild>
             <button
               className="p-2 rounded-md border border-border bg-card text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all"
@@ -114,6 +115,12 @@ const Index = () => {
                   Token set
                 </div>
               )}
+              <button
+                onClick={() => setSettingsOpen(false)}
+                className="w-full mt-1 h-9 bg-primary text-primary-foreground font-mono text-xs font-semibold rounded-md hover:opacity-90 transition-opacity"
+              >
+                Save & Close
+              </button>
             </div>
           </PopoverContent>
         </Popover>
