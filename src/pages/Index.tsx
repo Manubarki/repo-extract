@@ -9,7 +9,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 import { GitHubRepo, GitHubContributor } from "@/types/github";
-import { searchRepos, getContributors, enrichContributors } from "@/lib/github";
+import { searchRepos, getContributors, enrichContributors, EnrichControl } from "@/lib/github";
 
 const Index = () => {
   const [repos, setRepos] = useState<GitHubRepo[]>([]);
@@ -24,7 +24,8 @@ const Index = () => {
   const [extractRepoName, setExtractRepoName] = useState("");
   const [progress, setProgress] = useState<{ current: number; remaining: number | null } | null>(null);
   const [enrichProgress, setEnrichProgress] = useState<{ current: number; total: number } | null>(null);
-  const enrichAbortRef = useRef<AbortController | null>(null);
+  const enrichControlRef = useRef<EnrichControl>({ paused: false });
+  const [enrichPaused, setEnrichPaused] = useState(false);
 
   const handleSearch = async (query: string) => {
     setSearchLoading(true);
@@ -62,8 +63,8 @@ const Index = () => {
 
       // Auto-enrich
       setEnriching(true);
-      const abortController = new AbortController();
-      enrichAbortRef.current = abortController;
+      setEnrichPaused(false);
+      enrichControlRef.current = { paused: false };
       const enriched = await enrichContributors(
         result,
         token || undefined,
@@ -71,7 +72,7 @@ const Index = () => {
           setEnrichProgress({ current, total });
           if (partialResults) setContributors(partialResults);
         },
-        abortController.signal
+        enrichControlRef.current
       );
       setContributors(enriched);
     } catch (e: any) {
@@ -84,8 +85,10 @@ const Index = () => {
     }
   };
 
-  const handleStopEnrich = () => {
-    enrichAbortRef.current?.abort();
+  const handleTogglePause = () => {
+    const next = !enrichControlRef.current.paused;
+    enrichControlRef.current.paused = next;
+    setEnrichPaused(next);
   };
 
   return (
@@ -177,7 +180,8 @@ const Index = () => {
               progress={progress}
               enriching={enriching}
               enrichProgress={enrichProgress}
-              onStopEnrich={handleStopEnrich}
+              enrichPaused={enrichPaused}
+              onTogglePause={handleTogglePause}
             />
           </div>
         )}
