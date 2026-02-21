@@ -96,22 +96,14 @@ export async function getContributors(
     }
 
     const res = await fetchWithRateLimit(
-      `${GITHUB_API}/repos/${owner}/${repo}/contributors?per_page=${perPage}&page=${page}&anon=true`,
+      `${GITHUB_API}/repos/${owner}/${repo}/contributors?per_page=${perPage}&page=${page}`,
       token
     );
     const data: GitHubContributor[] = await res.json();
 
     if (!Array.isArray(data) || data.length === 0) break;
 
-    const filtered = data
-      .filter((c) => !c.login?.includes("[bot]") && c.type !== "Bot")
-      .map((c) => ({
-        ...c,
-        isAnonymous: !c.login || c.type === "Anonymous",
-        login: c.login || "anonymous",
-        avatar_url: c.avatar_url || "",
-        html_url: c.html_url || "",
-      }));
+    const filtered = data.filter((c) => !c.login?.includes("[bot]") && c.type !== "Bot");
 
     allContributors.push(...filtered);
     onProgress?.(allContributors.length, rateLimitRemaining);
