@@ -62,7 +62,10 @@ const Index = () => {
       const enriched = await enrichContributors(
         result,
         undefined,
-        (current, total) => setEnrichProgress({ current, total })
+        (current, total, partialResults) => {
+          setEnrichProgress({ current, total });
+          if (partialResults) setContributors(partialResults);
+        }
       );
       setContributors(enriched);
     } catch (e: any) {
