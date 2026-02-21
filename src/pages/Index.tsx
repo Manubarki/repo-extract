@@ -3,6 +3,7 @@ import { GitBranch } from "lucide-react";
 import SearchBar from "@/components/SearchBar";
 import RepoCard from "@/components/RepoCard";
 import ContributorList from "@/components/ContributorList";
+import HowItWorks from "@/components/HowItWorks";
 import DemoPreview from "@/components/DemoPreview";
 
 import { GitHubRepo, GitHubContributor } from "@/types/github";
@@ -102,9 +103,12 @@ const Index = () => {
           </div>
         )}
 
-        {/* Demo preview when idle */}
+        {/* How it works + Demo when idle */}
         {repos.length === 0 && contributors.length === 0 && !extracting && !searchLoading && !error && (
-          <DemoPreview />
+          <>
+            <HowItWorks />
+            <DemoPreview />
+          </>
         )}
       {(contributors.length > 0 || extracting || enriching) && (
           <div className="mb-8">
