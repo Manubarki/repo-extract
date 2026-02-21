@@ -3,7 +3,7 @@ import { GitBranch } from "lucide-react";
 import SearchBar from "@/components/SearchBar";
 import RepoCard from "@/components/RepoCard";
 import ContributorList from "@/components/ContributorList";
-import TokenInput from "@/components/TokenInput";
+
 import { GitHubRepo, GitHubContributor } from "@/types/github";
 import { searchRepos, getContributors, enrichContributors } from "@/lib/github";
 
@@ -11,7 +11,7 @@ const Index = () => {
   const [repos, setRepos] = useState<GitHubRepo[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [token, setToken] = useState("");
+  
 
   const [contributors, setContributors] = useState<GitHubContributor[]>([]);
   const [extracting, setExtracting] = useState<string | null>(null);
@@ -26,7 +26,7 @@ const Index = () => {
     setContributors([]);
     setExtractRepoName("");
     try {
-      const results = await searchRepos(query, token || undefined);
+      const results = await searchRepos(query);
       setRepos(results);
       if (results.length === 0) setError("No repositories found.");
     } catch (e: any) {
@@ -47,7 +47,7 @@ const Index = () => {
       const result = await getContributors(
         repo.owner.login,
         repo.name,
-        token || undefined,
+        undefined,
         (count, remaining) => setProgress({ current: count, remaining })
       );
       setContributors(result);
@@ -58,7 +58,7 @@ const Index = () => {
       setEnriching(true);
       const enriched = await enrichContributors(
         result,
-        token || undefined,
+        undefined,
         (current, total) => setEnrichProgress({ current, total })
       );
       setContributors(enriched);
@@ -88,10 +88,6 @@ const Index = () => {
           </p>
         </div>
 
-        {/* Token */}
-        <div className="mb-6">
-          <TokenInput token={token} onTokenChange={setToken} />
-        </div>
 
         {/* Search */}
         <div className="mb-8">
