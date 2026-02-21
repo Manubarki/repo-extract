@@ -16,7 +16,7 @@ const Index = () => {
   const [contributors, setContributors] = useState<GitHubContributor[]>([]);
   const [extracting, setExtracting] = useState<string | null>(null);
   const [extractRepoName, setExtractRepoName] = useState("");
-  const [progress, setProgress] = useState<{ current: number } | null>(null);
+  const [progress, setProgress] = useState<{ current: number; remaining: number | null } | null>(null);
 
   const handleSearch = async (query: string) => {
     setSearchLoading(true);
@@ -45,7 +45,7 @@ const Index = () => {
         repo.owner.login,
         repo.name,
         token || undefined,
-        (count) => setProgress({ current: count })
+        (count, remaining) => setProgress({ current: count, remaining })
       );
       setContributors(result);
     } catch (e: any) {

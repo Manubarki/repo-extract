@@ -6,7 +6,7 @@ interface ContributorListProps {
   contributors: GitHubContributor[];
   repoName: string;
   loading: boolean;
-  progress: { current: number } | null;
+  progress: { current: number; remaining: number | null } | null;
 }
 
 const ContributorList = ({ contributors, repoName, loading, progress }: ContributorListProps) => {
@@ -15,7 +15,7 @@ const ContributorList = ({ contributors, repoName, loading, progress }: Contribu
       <div className="bg-card border border-border rounded-lg p-8 text-center">
         <div className="inline-flex items-center gap-3 text-primary font-mono text-sm">
           <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          Extracting contributors... {progress ? `(${progress.current} found)` : ""}
+          Extracting contributors... {progress ? `(${progress.current} found${progress.remaining != null ? ` · ${progress.remaining} API calls left` : ""})` : ""}
         </div>
       </div>
     );

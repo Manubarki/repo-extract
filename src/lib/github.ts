@@ -2,25 +2,52 @@ import { GitHubRepo, GitHubContributor } from "@/types/github";
 
 const GITHUB_API = "https://api.github.com";
 
+// Rate limit tracking
+let rateLimitRemaining: number | null = null;
+let rateLimitReset: number | null = null;
+const SAFETY_BUFFER = 50; // Stop before hitting 0 — keep 50 requests in reserve
+const THROTTLE_MS = 200; // Small delay between paginated calls
+
+export function getRateLimitInfo() {
+  return { remaining: rateLimitRemaining, resetAt: rateLimitReset };
+}
+
+function updateRateLimitFromHeaders(res: Response) {
+  const remaining = res.headers.get("x-ratelimit-remaining");
+  const reset = res.headers.get("x-ratelimit-reset");
+  if (remaining != null) rateLimitRemaining = parseInt(remaining);
+  if (reset != null) rateLimitReset = parseInt(reset) * 1000;
+}
+
 async function fetchWithRateLimit(url: string, token?: string): Promise<Response> {
+  // Pre-check: refuse to call if we know we're near the limit
+  if (rateLimitRemaining !== null && rateLimitRemaining <= SAFETY_BUFFER) {
+    const resetIn = rateLimitReset ? Math.max(0, rateLimitReset - Date.now()) : 0;
+    const resetMins = Math.ceil(resetIn / 60000);
+    throw new Error(
+      `Rate limit guard: only ${rateLimitRemaining} requests left. Resets in ~${resetMins} min. Stopping to protect your quota.`
+    );
+  }
+
   const headers: Record<string, string> = {
     Accept: "application/vnd.github.v3+json",
   };
   if (token) headers.Authorization = `Bearer ${token}`;
 
   const res = await fetch(url, { headers });
+  updateRateLimitFromHeaders(res);
 
-  if (res.status === 403) {
+  if (res.status === 403 || res.status === 429) {
     const resetHeader = res.headers.get("x-ratelimit-reset");
     if (resetHeader) {
       const resetTime = parseInt(resetHeader) * 1000;
       const waitMs = Math.max(resetTime - Date.now(), 1000);
-      if (waitMs < 60000) {
-        await new Promise((r) => setTimeout(r, waitMs));
-        return fetchWithRateLimit(url, token);
-      }
+      const waitMins = Math.ceil(waitMs / 60000);
+      throw new Error(
+        `Rate limited by GitHub. Resets in ~${waitMins} min. Your data so far is preserved.`
+      );
     }
-    throw new Error("Rate limited by GitHub. Add a token or wait a moment.");
+    throw new Error("Rate limited by GitHub. Wait a moment and try again.");
   }
 
   if (!res.ok) {
@@ -32,7 +59,7 @@ async function fetchWithRateLimit(url: string, token?: string): Promise<Response
 
 export async function searchRepos(query: string, token?: string): Promise<GitHubRepo[]> {
   const res = await fetchWithRateLimit(
-    `${GITHUB_API}/search/repositories?q=${encodeURIComponent(query)}&sort=stars&order=desc&per_page=20`,
+    `${GITHUB_API}/search/repositories?q=${encodeURIComponent(query)}&sort=stars&order=desc&per_page=10`,
     token
   );
   const data = await res.json();
@@ -43,13 +70,20 @@ export async function getContributors(
   owner: string,
   repo: string,
   token?: string,
-  onProgress?: (current: number) => void
+  onProgress?: (current: number, remaining: number | null) => void
 ): Promise<GitHubContributor[]> {
   const allContributors: GitHubContributor[] = [];
   let page = 1;
   const perPage = 100;
+  const MAX_PAGES = 20; // Cap at 2000 contributors max to protect quota
 
-  while (true) {
+  while (page <= MAX_PAGES) {
+    // Pre-flight rate check
+    if (rateLimitRemaining !== null && rateLimitRemaining <= SAFETY_BUFFER) {
+      console.warn(`Rate limit guard triggered at page ${page}. Returning partial results.`);
+      break;
+    }
+
     const res = await fetchWithRateLimit(
       `${GITHUB_API}/repos/${owner}/${repo}/contributors?per_page=${perPage}&page=${page}&anon=true`,
       token
@@ -69,10 +103,13 @@ export async function getContributors(
       }));
 
     allContributors.push(...filtered);
-    onProgress?.(allContributors.length);
+    onProgress?.(allContributors.length, rateLimitRemaining);
 
     if (data.length < perPage) break;
     page++;
+
+    // Throttle to avoid burst usage
+    await new Promise((r) => setTimeout(r, THROTTLE_MS));
   }
 
   return allContributors;
