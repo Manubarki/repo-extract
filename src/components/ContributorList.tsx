@@ -14,7 +14,7 @@ interface ContributorListProps {
 const ContributorList = ({ contributors, repoName, loading, progress, enriching, enrichProgress }: ContributorListProps) => {
   if (loading) {
     return (
-      <div className="bg-card border border-border rounded-lg p-8 text-center">
+      <div className="bg-card border border-border rounded-lg p-8 text-center animate-fade-in">
         <div className="inline-flex items-center gap-3 text-primary font-mono text-sm">
           <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           Extracting contributors... {progress ? `(${progress.current} found${progress.remaining != null ? ` · ${progress.remaining} API calls left` : ""})` : ""}
@@ -31,8 +31,8 @@ const ContributorList = ({ contributors, repoName, loading, progress, enriching,
   };
 
   return (
-    <div className="bg-card border border-border rounded-lg overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+    <div className="bg-card border border-border rounded-lg overflow-hidden animate-fade-in shadow-[0_0_30px_hsl(152_68%_50%/0.06)]">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-gradient-to-r from-primary/5 to-accent/5">
         <div className="flex items-center gap-2 font-mono text-sm">
           <Users className="h-4 w-4 text-primary" />
           <span className="text-foreground font-semibold">{contributors.length}</span>
@@ -67,12 +67,13 @@ const ContributorList = ({ contributors, repoName, loading, progress, enriching,
             {contributors.map((c, i) => (
               <tr
                 key={`${c.login}-${i}`}
-                className="border-t border-border hover:bg-secondary/50 transition-colors"
+                className="border-t border-border hover:bg-secondary/50 transition-all duration-200 animate-fade-in"
+                style={{ animationDelay: `${Math.min(i * 40, 800)}ms`, animationFillMode: 'both' }}
               >
                 <td className="px-5 py-3">
                   <div className="flex items-center gap-3">
                     {c.avatar_url ? (
-                      <img src={c.avatar_url} alt={c.login} className="w-7 h-7 rounded-full" />
+                      <img src={c.avatar_url} alt={c.login} className="w-7 h-7 rounded-full ring-1 ring-border" />
                     ) : (
                       <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs text-muted-foreground font-mono">
                         ?
@@ -131,15 +132,9 @@ const ContributorList = ({ contributors, repoName, loading, progress, enriching,
                   </div>
                 </td>
                 <td className="px-5 py-3">
-                  {c.isAnonymous ? (
-                    <span className="inline-flex px-2 py-0.5 bg-muted text-muted-foreground text-xs font-mono rounded">
-                      anonymous
-                    </span>
-                  ) : (
-                    <span className="inline-flex px-2 py-0.5 bg-primary/10 text-primary text-xs font-mono rounded">
-                      user
-                    </span>
-                  )}
+                  <span className="inline-flex px-2 py-0.5 bg-primary/10 text-primary text-xs font-mono rounded">
+                    user
+                  </span>
                 </td>
               </tr>
             ))}

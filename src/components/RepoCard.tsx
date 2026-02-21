@@ -5,11 +5,15 @@ interface RepoCardProps {
   repo: GitHubRepo;
   onExtract: (repo: GitHubRepo) => void;
   extracting: boolean;
+  index?: number;
 }
 
-const RepoCard = ({ repo, onExtract, extracting }: RepoCardProps) => {
+const RepoCard = ({ repo, onExtract, extracting, index = 0 }: RepoCardProps) => {
   return (
-    <div className="bg-card border border-border rounded-lg p-5 hover:border-primary/40 transition-all group">
+    <div
+      className="bg-card border border-border rounded-lg p-5 hover:border-primary/40 hover:shadow-[0_0_20px_hsl(152_68%_50%/0.08)] transition-all duration-300 group animate-fade-in"
+      style={{ animationDelay: `${index * 80}ms`, animationFillMode: 'both' }}
+    >
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
