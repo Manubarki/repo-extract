@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { GitBranch, Settings, Key } from "lucide-react";
 import SearchBar from "@/components/SearchBar";
 import RepoCard from "@/components/RepoCard";
@@ -24,6 +24,7 @@ const Index = () => {
   const [extractRepoName, setExtractRepoName] = useState("");
   const [progress, setProgress] = useState<{ current: number; remaining: number | null } | null>(null);
   const [enrichProgress, setEnrichProgress] = useState<{ current: number; total: number } | null>(null);
+  const enrichAbortRef = useRef<AbortController | null>(null);
 
   const handleSearch = async (query: string) => {
     setSearchLoading(true);
@@ -61,13 +62,16 @@ const Index = () => {
 
       // Auto-enrich
       setEnriching(true);
+      const abortController = new AbortController();
+      enrichAbortRef.current = abortController;
       const enriched = await enrichContributors(
         result,
         token || undefined,
         (current, total, partialResults) => {
           setEnrichProgress({ current, total });
           if (partialResults) setContributors(partialResults);
-        }
+        },
+        abortController.signal
       );
       setContributors(enriched);
     } catch (e: any) {
@@ -78,6 +82,10 @@ const Index = () => {
       setProgress(null);
       setEnrichProgress(null);
     }
+  };
+
+  const handleStopEnrich = () => {
+    enrichAbortRef.current?.abort();
   };
 
   return (
@@ -169,6 +177,7 @@ const Index = () => {
               progress={progress}
               enriching={enriching}
               enrichProgress={enrichProgress}
+              onStopEnrich={handleStopEnrich}
             />
           </div>
         )}
