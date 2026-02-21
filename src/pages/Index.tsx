@@ -5,6 +5,7 @@ import RepoCard from "@/components/RepoCard";
 import ContributorList from "@/components/ContributorList";
 import HowItWorks from "@/components/HowItWorks";
 import DemoPreview from "@/components/DemoPreview";
+import ThemeToggle from "@/components/ThemeToggle";
 
 import { GitHubRepo, GitHubContributor } from "@/types/github";
 import { searchRepos, getContributors, enrichContributors } from "@/lib/github";
@@ -75,7 +76,10 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background transition-colors duration-300">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
       <div className="max-w-4xl mx-auto px-4 py-16">
         {/* Header */}
         <div className="text-center mb-10">

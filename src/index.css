@@ -5,7 +5,8 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
 
 @layer base {
-  :root {
+  :root,
+  .dark {
     --background: 220 16% 8%;
     --foreground: 210 20% 90%;
 
@@ -47,6 +48,50 @@
 
     --glow-primary: 0 0 20px hsl(152 68% 50% / 0.15);
     --glow-accent: 0 0 20px hsl(187 70% 50% / 0.15);
+  }
+
+  .light {
+    --background: 0 0% 98%;
+    --foreground: 220 14% 14%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 14% 14%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 14% 14%;
+
+    --primary: 152 68% 38%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 14% 93%;
+    --secondary-foreground: 220 14% 30%;
+
+    --muted: 220 14% 95%;
+    --muted-foreground: 215 12% 45%;
+
+    --accent: 187 70% 38%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 14% 88%;
+    --input: 220 14% 88%;
+    --ring: 152 68% 38%;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 220 14% 14%;
+    --sidebar-primary: 152 68% 38%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 14% 93%;
+    --sidebar-accent-foreground: 220 14% 30%;
+    --sidebar-border: 220 14% 88%;
+    --sidebar-ring: 152 68% 38%;
+
+    --glow-primary: 0 0 20px hsl(152 68% 38% / 0.1);
+    --glow-accent: 0 0 20px hsl(187 70% 38% / 0.1);
   }
 }
 
