@@ -4,9 +4,18 @@ const GITHUB_API = "https://api.github.com";
 
 // Rate limit tracking
 let rateLimitRemaining: number | null = null;
+let rateLimitLimit: number | null = null;
 let rateLimitReset: number | null = null;
-const SAFETY_BUFFER = 50; // Stop before hitting 0 — keep 50 requests in reserve
+const SAFETY_PERCENT = 0.10; // Keep 10% of quota in reserve
+const MIN_SAFE_REMAINING = 5; // Absolute minimum before stopping
 const THROTTLE_MS = 200; // Small delay between paginated calls
+
+function getSafetyBuffer(): number {
+  if (rateLimitLimit !== null) {
+    return Math.max(Math.floor(rateLimitLimit * SAFETY_PERCENT), MIN_SAFE_REMAINING);
+  }
+  return MIN_SAFE_REMAINING;
+}
 
 export function getRateLimitInfo() {
   return { remaining: rateLimitRemaining, resetAt: rateLimitReset };
@@ -14,14 +23,16 @@ export function getRateLimitInfo() {
 
 function updateRateLimitFromHeaders(res: Response) {
   const remaining = res.headers.get("x-ratelimit-remaining");
+  const limit = res.headers.get("x-ratelimit-limit");
   const reset = res.headers.get("x-ratelimit-reset");
   if (remaining != null) rateLimitRemaining = parseInt(remaining);
+  if (limit != null) rateLimitLimit = parseInt(limit);
   if (reset != null) rateLimitReset = parseInt(reset) * 1000;
 }
 
 async function fetchWithRateLimit(url: string, token?: string): Promise<Response> {
   // Pre-check: refuse to call if we know we're near the limit
-  if (rateLimitRemaining !== null && rateLimitRemaining <= SAFETY_BUFFER) {
+  if (rateLimitRemaining !== null && rateLimitRemaining <= getSafetyBuffer()) {
     const resetIn = rateLimitReset ? Math.max(0, rateLimitReset - Date.now()) : 0;
     const resetMins = Math.ceil(resetIn / 60000);
     throw new Error(
@@ -79,7 +90,7 @@ export async function getContributors(
 
   while (page <= MAX_PAGES) {
     // Pre-flight rate check
-    if (rateLimitRemaining !== null && rateLimitRemaining <= SAFETY_BUFFER) {
+    if (rateLimitRemaining !== null && rateLimitRemaining <= getSafetyBuffer()) {
       console.warn(`Rate limit guard triggered at page ${page}. Returning partial results.`);
       break;
     }
