@@ -121,7 +121,7 @@ export async function getContributors(
 export async function enrichContributors(
   contributors: GitHubContributor[],
   token?: string,
-  onProgress?: (enriched: number, total: number) => void
+  onProgress?: (enriched: number, total: number, partialResults?: GitHubContributor[]) => void
 ): Promise<GitHubContributor[]> {
   const enriched: GitHubContributor[] = [];
   const toEnrich = contributors.filter((c) => !c.isAnonymous && c.login !== "anonymous");
@@ -133,7 +133,9 @@ export async function enrichContributors(
     // Rate limit guard
     if (rateLimitRemaining !== null && rateLimitRemaining <= getSafetyBuffer()) {
       console.warn(`Rate limit guard during enrichment at ${i}/${toEnrich.length}. Returning partial.`);
-      enriched.push(...toEnrich.slice(i).map((r) => ({ ...r, enriched: false })));
+      const remaining = toEnrich.slice(i).map((r) => ({ ...r, enriched: false }));
+      enriched.push(...remaining);
+      onProgress?.(i, toEnrich.length, [...enriched]);
       break;
     }
 
@@ -154,7 +156,7 @@ export async function enrichContributors(
       enriched.push({ ...c, enriched: false });
     }
 
-    onProgress?.(i + 1, toEnrich.length);
+    onProgress?.(i + 1, toEnrich.length, [...enriched, ...toEnrich.slice(i + 1)]);
     if (i < toEnrich.length - 1) {
       await new Promise((r) => setTimeout(r, THROTTLE_MS));
     }
