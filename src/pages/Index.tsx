@@ -1,11 +1,122 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from "react";
+import { GitBranch } from "lucide-react";
+import SearchBar from "@/components/SearchBar";
+import RepoCard from "@/components/RepoCard";
+import ContributorList from "@/components/ContributorList";
+import TokenInput from "@/components/TokenInput";
+import { GitHubRepo, GitHubContributor } from "@/types/github";
+import { searchRepos, getContributors } from "@/lib/github";
 
 const Index = () => {
+  const [repos, setRepos] = useState<GitHubRepo[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [token, setToken] = useState("");
+
+  const [contributors, setContributors] = useState<GitHubContributor[]>([]);
+  const [extracting, setExtracting] = useState<string | null>(null);
+  const [extractRepoName, setExtractRepoName] = useState("");
+  const [progress, setProgress] = useState<{ current: number } | null>(null);
+
+  const handleSearch = async (query: string) => {
+    setSearchLoading(true);
+    setError(null);
+    setContributors([]);
+    setExtractRepoName("");
+    try {
+      const results = await searchRepos(query, token || undefined);
+      setRepos(results);
+      if (results.length === 0) setError("No repositories found.");
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const handleExtract = async (repo: GitHubRepo) => {
+    setExtracting(repo.full_name);
+    setContributors([]);
+    setExtractRepoName(repo.full_name);
+    setProgress(null);
+    setError(null);
+    try {
+      const result = await getContributors(
+        repo.owner.login,
+        repo.name,
+        token || undefined,
+        (count) => setProgress({ current: count })
+      );
+      setContributors(result);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setExtracting(null);
+      setProgress(null);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <div className="min-h-screen bg-background">
+      <div className="max-w-4xl mx-auto px-4 py-16">
+        {/* Header */}
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center gap-3 mb-4">
+            <GitBranch className="h-8 w-8 text-primary" />
+            <h1 className="text-3xl font-bold font-mono text-foreground tracking-tight">
+              gh-extract
+            </h1>
+          </div>
+          <p className="text-muted-foreground text-sm font-mono">
+            Search repos · Extract contributors · Export CSV
+          </p>
+        </div>
+
+        {/* Token */}
+        <div className="mb-6">
+          <TokenInput token={token} onTokenChange={setToken} />
+        </div>
+
+        {/* Search */}
+        <div className="mb-8">
+          <SearchBar onSearch={handleSearch} loading={searchLoading} />
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div className="mb-6 px-4 py-3 bg-destructive/10 border border-destructive/30 rounded-lg text-destructive text-sm font-mono text-center">
+            {error}
+          </div>
+        )}
+
+        {/* Contributors */}
+        {(contributors.length > 0 || extracting) && (
+          <div className="mb-8">
+            <ContributorList
+              contributors={contributors}
+              repoName={extractRepoName}
+              loading={!!extracting}
+              progress={progress}
+            />
+          </div>
+        )}
+
+        {/* Repos */}
+        {repos.length > 0 && (
+          <div className="space-y-3">
+            <h2 className="font-mono text-xs text-muted-foreground uppercase tracking-wider mb-3">
+              Repositories
+            </h2>
+            {repos.map((repo) => (
+              <RepoCard
+                key={repo.id}
+                repo={repo}
+                onExtract={handleExtract}
+                extracting={extracting === repo.full_name}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
