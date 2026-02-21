@@ -91,7 +91,7 @@ const Index = () => {
               <Settings className="h-4 w-4" />
             </button>
           </PopoverTrigger>
-          <PopoverContent align="end" className="w-80">
+          <PopoverContent align="end" sideOffset={8} className="w-80 z-50">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Key className="h-4 w-4 text-primary" />
