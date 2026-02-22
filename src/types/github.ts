@@ -30,6 +30,7 @@ export interface GitHubContributor {
   twitter_username?: string | null;
   location?: string | null;
   enriched?: boolean;
+  email?: string | null;
 }
 
 export interface SearchState {

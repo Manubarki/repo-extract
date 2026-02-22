@@ -175,14 +175,54 @@ export async function enrichContributors(
 }
 
 export function contributorsToCsv(contributors: GitHubContributor[], repoName: string): string {
-  const header = "Repository,Username,Full Name,Profile URL,Contributions,Type,Company,Twitter,Blog,Location,Bio\n";
+  const header = "Repository,Username,Full Name,Email,Profile URL,Contributions,Type,Company,Twitter,Blog,Location,Bio\n";
   const rows = contributors
     .map(
       (c) =>
-        `"${repoName}","${c.login}","${c.name || ""}","${c.html_url}",${c.contributions},"${c.isAnonymous ? "Anonymous" : "User"}","${c.company || ""}","${c.twitter_username ? `https://twitter.com/${c.twitter_username}` : ""}","${c.blog || ""}","${c.location || ""}","${(c.bio || "").replace(/"/g, '""')}"`
+        `"${repoName}","${c.login}","${c.name || ""}","${c.email || ""}","${c.html_url}",${c.contributions},"${c.isAnonymous ? "Anonymous" : "User"}","${c.company || ""}","${c.twitter_username ? `https://twitter.com/${c.twitter_username}` : ""}","${c.blog || ""}","${c.location || ""}","${(c.bio || "").replace(/"/g, '""')}"`
     )
     .join("\n");
   return header + rows;
+}
+
+export async function findContributorEmail(
+  login: string,
+  token?: string
+): Promise<string | null> {
+  // 1. Get user's repos
+  const reposRes = await fetchWithRateLimit(
+    `${GITHUB_API}/users/${login}/repos?sort=updated&per_page=5`,
+    token
+  );
+  const repos = await reposRes.json();
+  if (!Array.isArray(repos) || repos.length === 0) return null;
+
+  // 2. Try each repo to find a commit by this user
+  for (const repo of repos) {
+    try {
+      const commitsRes = await fetchWithRateLimit(
+        `${GITHUB_API}/repos/${repo.full_name}/commits?author=${login}&per_page=1`,
+        token
+      );
+      const commits = await commitsRes.json();
+      if (!Array.isArray(commits) || commits.length === 0) continue;
+
+      // 3. Fetch the .patch of the commit
+      const patchUrl = commits[0].html_url + ".patch";
+      const patchRes = await fetch(patchUrl);
+      if (!patchRes.ok) continue;
+      const patchText = await patchRes.text();
+
+      // 4. Extract email from "From: Name <email>" line
+      const match = patchText.match(/From:.*<([^>]+@[^>]+)>/);
+      if (match && match[1] && !match[1].includes("noreply.github.com")) {
+        return match[1];
+      }
+    } catch {
+      continue;
+    }
+  }
+  return null;
 }
 
 export function downloadCsv(csv: string, filename: string) {

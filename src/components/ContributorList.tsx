@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { GitHubContributor } from "@/types/github";
-import { Download, Users, ExternalLink } from "lucide-react";
-import { contributorsToCsv, downloadCsv } from "@/lib/github";
+import { Download, Users, ExternalLink, Mail, Loader2 } from "lucide-react";
+import { contributorsToCsv, downloadCsv, findContributorEmail } from "@/lib/github";
 
 interface ContributorListProps {
   contributors: GitHubContributor[];
@@ -11,9 +12,12 @@ interface ContributorListProps {
   enrichProgress?: { current: number; total: number } | null;
   enrichPaused?: boolean;
   onTogglePause?: () => void;
+  token?: string;
+  onUpdateContributor?: (login: string, updates: Partial<GitHubContributor>) => void;
 }
 
-const ContributorList = ({ contributors, repoName, loading, progress, enriching, enrichProgress, enrichPaused, onTogglePause }: ContributorListProps) => {
+const ContributorList = ({ contributors, repoName, loading, progress, enriching, enrichProgress, enrichPaused, onTogglePause, token, onUpdateContributor }: ContributorListProps) => {
+  const [findingEmail, setFindingEmail] = useState<Record<string, boolean>>({});
   if (loading) {
     return (
       <div className="bg-card border border-border rounded-lg p-8 text-center animate-fade-in">
@@ -30,6 +34,18 @@ const ContributorList = ({ contributors, repoName, loading, progress, enriching,
   const handleExport = () => {
     const csv = contributorsToCsv(contributors, repoName);
     downloadCsv(csv, `${repoName.replace("/", "_")}_contributors.csv`);
+  };
+
+  const handleFindEmail = async (login: string) => {
+    setFindingEmail((prev) => ({ ...prev, [login]: true }));
+    try {
+      const email = await findContributorEmail(login, token);
+      onUpdateContributor?.(login, { email: email || "not found" });
+    } catch {
+      onUpdateContributor?.(login, { email: "error" });
+    } finally {
+      setFindingEmail((prev) => ({ ...prev, [login]: false }));
+    }
   };
 
   return (
@@ -69,6 +85,7 @@ const ContributorList = ({ contributors, repoName, loading, progress, enriching,
             <tr className="text-left font-mono text-xs text-muted-foreground">
               <th className="px-5 py-3">User</th>
               <th className="px-5 py-3">Contributions</th>
+              <th className="px-5 py-3">Email</th>
               <th className="px-5 py-3">Socials</th>
               <th className="px-5 py-3">Type</th>
             </tr>
@@ -112,6 +129,26 @@ const ContributorList = ({ contributors, repoName, loading, progress, enriching,
                   </div>
                 </td>
                 <td className="px-5 py-3 font-mono text-foreground">{c.contributions}</td>
+                <td className="px-5 py-3">
+                  {c.email && c.email !== "not found" && c.email !== "error" ? (
+                    <a href={`mailto:${c.email}`} className="font-mono text-xs text-primary hover:underline">{c.email}</a>
+                  ) : c.email === "not found" ? (
+                    <span className="font-mono text-xs text-muted-foreground">not found</span>
+                  ) : c.email === "error" ? (
+                    <span className="font-mono text-xs text-destructive">error</span>
+                  ) : findingEmail[c.login] ? (
+                    <Loader2 className="h-3.5 w-3.5 text-muted-foreground animate-spin" />
+                  ) : (
+                    <button
+                      onClick={() => handleFindEmail(c.login)}
+                      className="flex items-center gap-1 px-2 py-0.5 text-xs font-mono text-accent border border-accent/30 rounded hover:bg-accent/10 transition-colors"
+                      title="Find email from commit patches"
+                    >
+                      <Mail className="h-3 w-3" />
+                      Find
+                    </button>
+                  )}
+                </td>
                 <td className="px-5 py-3">
                   <div className="flex items-center gap-2">
                     {c.twitter_username && (
