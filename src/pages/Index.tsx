@@ -10,6 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 
 import { GitHubRepo, GitHubContributor } from "@/types/github";
 import { searchRepos, getContributors, enrichContributors, EnrichControl } from "@/lib/github";
+import { useCallback } from "react";
 
 const Index = () => {
   const [repos, setRepos] = useState<GitHubRepo[]>([]);
@@ -90,6 +91,12 @@ const Index = () => {
     enrichControlRef.current.paused = next;
     setEnrichPaused(next);
   };
+
+  const handleUpdateContributor = useCallback((login: string, updates: Partial<import("@/types/github").GitHubContributor>) => {
+    setContributors((prev) =>
+      prev.map((c) => (c.login === login ? { ...c, ...updates } : c))
+    );
+  }, []);
 
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
@@ -173,16 +180,18 @@ const Index = () => {
         )}
       {(contributors.length > 0 || extracting || enriching) && (
           <div className="mb-8">
-            <ContributorList
-              contributors={contributors}
-              repoName={extractRepoName}
-              loading={!!extracting}
-              progress={progress}
-              enriching={enriching}
-              enrichProgress={enrichProgress}
-              enrichPaused={enrichPaused}
-              onTogglePause={handleTogglePause}
-            />
+             <ContributorList
+               contributors={contributors}
+               repoName={extractRepoName}
+               loading={!!extracting}
+               progress={progress}
+               enriching={enriching}
+               enrichProgress={enrichProgress}
+               enrichPaused={enrichPaused}
+               onTogglePause={handleTogglePause}
+               token={token || undefined}
+               onUpdateContributor={handleUpdateContributor}
+             />
           </div>
         )}
 
