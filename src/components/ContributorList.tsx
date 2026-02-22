@@ -16,6 +16,18 @@ interface ContributorListProps {
   onUpdateContributor?: (login: string, updates: Partial<GitHubContributor>) => void;
 }
 
+const sanitizeBlogUrl = (blog: string | null | undefined): string | null => {
+  if (!blog) return null;
+  const trimmed = blog.trim();
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+  if (/^[a-zA-Z0-9][a-zA-Z0-9.-]*\.[a-zA-Z]{2,}/.test(trimmed)) {
+    return `https://${trimmed}`;
+  }
+  return null;
+};
+
 const ContributorList = ({ contributors, repoName, loading, progress, enriching, enrichProgress, enrichPaused, onTogglePause, token, onUpdateContributor }: ContributorListProps) => {
   const [findingEmail, setFindingEmail] = useState<Record<string, boolean>>({});
   if (loading) {
@@ -162,17 +174,20 @@ const ContributorList = ({ contributors, repoName, loading, progress, enriching,
                         𝕏
                       </a>
                     )}
-                    {c.blog && (
-                      <a
-                        href={c.blog.startsWith("http") ? c.blog : `https://${c.blog}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline"
-                        title="Blog/Website"
-                      >
-                        <ExternalLink className="h-3.5 w-3.5" />
-                      </a>
-                    )}
+                    {(() => {
+                      const blogUrl = sanitizeBlogUrl(c.blog);
+                      return blogUrl ? (
+                        <a
+                          href={blogUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline"
+                          title="Blog/Website"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </a>
+                      ) : null;
+                    })()}
                     {!c.twitter_username && !c.blog && (
                       <span className="text-xs text-muted-foreground font-mono">—</span>
                     )}

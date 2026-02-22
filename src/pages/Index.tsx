@@ -16,7 +16,7 @@ const Index = () => {
   const [repos, setRepos] = useState<GitHubRepo[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [token, setToken] = useState(() => localStorage.getItem("gh_token") || "");
+  const [token, setToken] = useState(() => sessionStorage.getItem("gh_token") || "");
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const [contributors, setContributors] = useState<GitHubContributor[]>([]);
@@ -116,21 +116,33 @@ const Index = () => {
                 <Key className="h-4 w-4 text-primary" />
                 <span className="font-mono text-xs text-foreground font-semibold">GitHub Token</span>
               </div>
-              <p className="text-xs text-muted-foreground font-mono">Optional. Increases rate limit from 60 to 5,000 req/hr.</p>
+              <p className="text-xs text-muted-foreground font-mono">Optional. Increases rate limit from 60 to 5,000 req/hr. Use a token with minimal scopes (public_repo read-only).</p>
+              <p className="text-xs text-muted-foreground/70 font-mono">Token is stored in session only and cleared when you close the tab.</p>
               <input
                 type="password"
                 value={token}
                 onChange={(e) => {
                   setToken(e.target.value);
-                  localStorage.setItem("gh_token", e.target.value);
+                  sessionStorage.setItem("gh_token", e.target.value);
                 }}
                 placeholder="ghp_xxxxxxxxxxxx"
                 className="w-full h-9 px-3 bg-secondary border border-border rounded-md font-mono text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all"
               />
               {token && (
-                <div className="flex items-center gap-1 text-xs text-primary font-mono">
-                  <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-                  Token set
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1 text-xs text-primary font-mono">
+                    <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                    Token set
+                  </div>
+                  <button
+                    onClick={() => {
+                      setToken("");
+                      sessionStorage.removeItem("gh_token");
+                    }}
+                    className="text-xs font-mono text-destructive hover:underline"
+                  >
+                    Clear
+                  </button>
                 </div>
               )}
               <button
