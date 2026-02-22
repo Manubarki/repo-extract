@@ -61,13 +61,24 @@ const Index = () => {
       setContributors(result);
       setExtracting(null);
       setProgress(null);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setExtracting(null);
+      setEnriching(false);
+      setProgress(null);
+      setEnrichProgress(null);
+    }
+  };
 
-      // Auto-enrich
-      setEnriching(true);
-      setEnrichPaused(false);
-      enrichControlRef.current = { paused: false };
+  const handleEnrich = async () => {
+    if (enriching || contributors.length === 0) return;
+    setEnriching(true);
+    setEnrichPaused(false);
+    enrichControlRef.current = { paused: false };
+    try {
       const enriched = await enrichContributors(
-        result,
+        contributors,
         token || undefined,
         (current, total, partialResults) => {
           setEnrichProgress({ current, total });
@@ -79,9 +90,7 @@ const Index = () => {
     } catch (e: any) {
       setError(e.message);
     } finally {
-      setExtracting(null);
       setEnriching(false);
-      setProgress(null);
       setEnrichProgress(null);
     }
   };
@@ -201,6 +210,7 @@ const Index = () => {
                enrichProgress={enrichProgress}
                enrichPaused={enrichPaused}
                onTogglePause={handleTogglePause}
+               onEnrich={handleEnrich}
                token={token || undefined}
                onUpdateContributor={handleUpdateContributor}
              />

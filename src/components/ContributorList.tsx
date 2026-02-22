@@ -12,6 +12,7 @@ interface ContributorListProps {
   enrichProgress?: { current: number; total: number } | null;
   enrichPaused?: boolean;
   onTogglePause?: () => void;
+  onEnrich?: () => void;
   token?: string;
   onUpdateContributor?: (login: string, updates: Partial<GitHubContributor>) => void;
 }
@@ -28,7 +29,7 @@ const sanitizeBlogUrl = (blog: string | null | undefined): string | null => {
   return null;
 };
 
-const ContributorList = ({ contributors, repoName, loading, progress, enriching, enrichProgress, enrichPaused, onTogglePause, token, onUpdateContributor }: ContributorListProps) => {
+const ContributorList = ({ contributors, repoName, loading, progress, enriching, enrichProgress, enrichPaused, onTogglePause, onEnrich, token, onUpdateContributor }: ContributorListProps) => {
   const [findingEmail, setFindingEmail] = useState<Record<string, boolean>>({});
   if (loading) {
     return (
@@ -82,6 +83,15 @@ const ContributorList = ({ contributors, repoName, loading, progress, enriching,
               {enrichPaused ? "Resume" : "Pause"}
             </button>
           </div>
+        )}
+        {!enriching && !contributors.every((c) => c.enriched) && (
+          <button
+            onClick={onEnrich}
+            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-accent to-primary text-primary-foreground font-mono text-xs font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-[1.03] active:scale-[0.98] transition-all duration-200"
+          >
+            <Users className="h-4 w-4" />
+            Enrich Profiles
+          </button>
         )}
         <button
           onClick={handleExport}
