@@ -207,16 +207,10 @@ export async function findContributorEmail(
       const commits = await commitsRes.json();
       if (!Array.isArray(commits) || commits.length === 0) continue;
 
-      // 3. Fetch the .patch of the commit
-      const patchUrl = commits[0].html_url + ".patch";
-      const patchRes = await fetch(patchUrl);
-      if (!patchRes.ok) continue;
-      const patchText = await patchRes.text();
-
-      // 4. Extract email from "From: Name <email>" line
-      const match = patchText.match(/From:.*<([^>]+@[^>]+)>/);
-      if (match && match[1] && !match[1].includes("noreply.github.com")) {
-        return match[1];
+      // 3. The commit object from the API already contains the author email
+      const email = commits[0]?.commit?.author?.email;
+      if (email && !email.includes("noreply.github.com")) {
+        return email;
       }
     } catch {
       continue;
