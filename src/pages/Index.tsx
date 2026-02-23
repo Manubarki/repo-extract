@@ -5,6 +5,7 @@ import RepoCard from "@/components/RepoCard";
 import ContributorList from "@/components/ContributorList";
 import HowItWorks from "@/components/HowItWorks";
 import DemoPreview from "@/components/DemoPreview";
+import Footer from "@/components/Footer";
 import ThemeToggle from "@/components/ThemeToggle";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
@@ -235,6 +236,7 @@ const Index = () => {
           </div>
         )}
       </div>
+      <Footer />
     </div>
   );
 };
