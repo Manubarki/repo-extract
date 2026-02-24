@@ -142,13 +142,13 @@ export async function enrichContributors(
   const enriched: GitHubContributor[] = [];
   const toEnrich = contributors.filter((c) => !c.isAnonymous && c.login !== "anonymous");
   const alreadyAnon = contributors.filter((c) => c.isAnonymous || c.login === "anonymous");
+  const BATCH_SIZE = 5;
 
-  for (let i = 0; i < toEnrich.length; i++) {
+  for (let i = 0; i < toEnrich.length; i += BATCH_SIZE) {
     // Wait while paused
     while (control?.paused) {
       await new Promise((r) => setTimeout(r, 200));
     }
-    const c = toEnrich[i];
 
     // Rate limit guard
     if (rateLimitRemaining !== null && rateLimitRemaining <= getSafetyBuffer()) {
@@ -159,25 +159,36 @@ export async function enrichContributors(
       break;
     }
 
-    try {
-      const res = await fetchWithRateLimit(`${GITHUB_API}/users/${c.login}`, token);
-      const profile = await res.json();
-      enriched.push({
-        ...c,
-        name: profile.name || null,
-        bio: profile.bio || null,
-        company: profile.company || null,
-        blog: profile.blog || null,
-        twitter_username: profile.twitter_username || null,
-        location: profile.location || null,
-        enriched: true,
-      });
-    } catch {
-      enriched.push({ ...c, enriched: false });
+    const batch = toEnrich.slice(i, i + BATCH_SIZE);
+    const results = await Promise.allSettled(
+      batch.map(async (c) => {
+        try {
+          const res = await fetchWithRateLimit(`${GITHUB_API}/users/${c.login}`, token);
+          const profile = await res.json();
+          return {
+            ...c,
+            name: profile.name || null,
+            bio: profile.bio || null,
+            company: profile.company || null,
+            blog: profile.blog || null,
+            twitter_username: profile.twitter_username || null,
+            location: profile.location || null,
+            enriched: true,
+          };
+        } catch {
+          return { ...c, enriched: false };
+        }
+      })
+    );
+
+    for (const result of results) {
+      enriched.push(result.status === "fulfilled" ? result.value : batch[results.indexOf(result)]);
     }
 
-    onProgress?.(i + 1, toEnrich.length, [...enriched, ...toEnrich.slice(i + 1)]);
-    if (i < toEnrich.length - 1) {
+    const done = Math.min(i + BATCH_SIZE, toEnrich.length);
+    onProgress?.(done, toEnrich.length, [...enriched, ...toEnrich.slice(done)]);
+
+    if (done < toEnrich.length) {
       await new Promise((r) => setTimeout(r, THROTTLE_MS));
     }
   }
