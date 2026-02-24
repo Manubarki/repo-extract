@@ -1,10 +1,9 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { GitHubRepo, GitHubContributor } from "@/types/github";
-import { Star, GitFork, Clock, ExternalLink } from "lucide-react";
+import { Star, GitFork, Clock, ExternalLink, Users } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { getContributors, enrichContributors, EnrichControl } from "@/lib/github";
 import ContributorList from "@/components/ContributorList";
-import { useCallback } from "react";
 
 interface RepoDialogProps {
   repo: GitHubRepo | null;
@@ -21,7 +20,40 @@ const RepoDialog = ({ repo, open, onOpenChange, token }: RepoDialogProps) => {
   const [enrichProgress, setEnrichProgress] = useState<{ current: number; total: number } | null>(null);
   const [enrichPaused, setEnrichPaused] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [contributorCount, setContributorCount] = useState<number | null>(null);
   const enrichControlRef = useRef<EnrichControl>({ paused: false });
+
+  // Fetch contributor count when dialog opens
+  useEffect(() => {
+    if (!open || !repo) {
+      setContributorCount(null);
+      return;
+    }
+    const fetchCount = async () => {
+      try {
+        const headers: Record<string, string> = { Accept: "application/vnd.github+json" };
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+        const res = await fetch(
+          `https://api.github.com/repos/${repo.owner.login}/${repo.name}/contributors?per_page=1&anon=true`,
+          { headers }
+        );
+        const link = res.headers.get("Link");
+        if (link) {
+          const match = link.match(/page=(\d+)>;\s*rel="last"/);
+          if (match) {
+            setContributorCount(parseInt(match[1], 10));
+            return;
+          }
+        }
+        // If no Link header, count from the response body
+        const data = await res.json();
+        if (Array.isArray(data)) setContributorCount(data.length);
+      } catch {
+        // Silently fail — count is optional
+      }
+    };
+    fetchCount();
+  }, [open, repo, token]);
 
   const handleExtract = async () => {
     if (!repo) return;
@@ -152,6 +184,13 @@ const RepoDialog = ({ repo, open, onOpenChange, token }: RepoDialogProps) => {
         {/* Extract button or contributors */}
         {contributors.length === 0 && !extracting ? (
           <div className="flex flex-col items-center gap-3 py-8">
+            {contributorCount !== null && (
+              <div className="flex items-center gap-2 text-foreground font-mono text-sm">
+                <Users className="h-4 w-4 text-primary" />
+                <span className="font-semibold">{contributorCount.toLocaleString()}</span>
+                <span className="text-muted-foreground">contributors</span>
+              </div>
+            )}
             <p className="text-muted-foreground text-sm font-mono">
               Extract all contributors from this repository
             </p>
