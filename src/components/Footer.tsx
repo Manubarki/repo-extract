@@ -2,36 +2,51 @@ const Footer = () => {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="border-t border-border bg-card/50 mt-16">
-      <div className="max-w-4xl mx-auto px-4 py-8 space-y-4">
-        <div className="space-y-2">
-          <h3 className="font-mono text-xs font-semibold text-foreground uppercase tracking-wider">
-            Disclaimer
+    <footer className="mt-16 px-4 pb-8">
+      <div className="max-w-2xl mx-auto">
+        {/* Disclaimer box */}
+        <div className="rounded-xl border border-border bg-card/80 p-6 text-center space-y-3">
+          <h3 className="text-sm font-semibold text-foreground flex items-center justify-center gap-2">
+            <span>⚠️</span> Disclaimer
           </h3>
-          <p className="font-mono text-xs text-muted-foreground leading-relaxed">
-            Repo Extract is an independent tool and is not affiliated with, endorsed by, or sponsored by GitHub, Inc.
-            All data is retrieved via the public GitHub API. Use of this tool is subject to GitHub's API terms of service
-            and rate limits. We do not store your GitHub token — it is kept in your browser session only and cleared when
-            you close the tab.
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            This tool is for educational purposes only. By using it, you agree to comply with{" "}
+            <a
+              href="https://docs.github.com/en/site-policy/github-terms/github-terms-of-service"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              GitHub's Terms of Service
+            </a>
+            , respect privacy, and use data responsibly. Not for spam or malicious use.
           </p>
         </div>
 
-        <div className="space-y-2">
-          <h3 className="font-mono text-xs font-semibold text-foreground uppercase tracking-wider">
-            Terms of Use
-          </h3>
-          <p className="font-mono text-xs text-muted-foreground leading-relaxed">
-            This tool is provided "as is" without warranty of any kind. You are solely responsible for how you use the
-            extracted data, including compliance with applicable privacy laws and regulations (e.g., GDPR, CCPA). Do not
-            use extracted contributor information for unsolicited contact, spam, or any purpose that violates applicable
-            laws. By using this tool, you agree to these terms.
+        {/* Copyright + links */}
+        <div className="mt-6 text-center space-y-1">
+          <p className="text-xs text-muted-foreground">
+            © {year} Repo Extract · Built with ❤️
           </p>
-        </div>
-
-        <div className="pt-2 border-t border-border">
-          <p className="font-mono text-xs text-muted-foreground text-center">
-            © {year} Repo Extract. All rights reserved.
-          </p>
+          <div className="flex items-center justify-center gap-2 text-xs">
+            <a
+              href="https://github.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              GitHub
+            </a>
+            <span className="text-muted-foreground">·</span>
+            <a
+              href="https://docs.github.com/en/rest"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              API Docs
+            </a>
+          </div>
         </div>
       </div>
     </footer>
