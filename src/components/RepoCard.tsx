@@ -11,7 +11,7 @@ interface RepoCardProps {
 const RepoCard = ({ repo, onExtract, extracting, index = 0 }: RepoCardProps) => {
   return (
     <div
-      className="bg-card border border-border rounded-lg p-5 hover:border-primary/40 hover:shadow-[0_0_20px_hsl(152_68%_50%/0.08)] transition-all duration-300 group animate-fade-in"
+      className="bg-card border border-border rounded-lg p-5 hover:border-primary/40 hover:shadow-[0_0_20px_hsl(152_68%_50%/0.08)] hover:-translate-y-1 transition-all duration-300 group animate-fade-in"
       style={{ animationDelay: `${index * 80}ms`, animationFillMode: 'both' }}
     >
       <div className="flex items-start justify-between gap-4">

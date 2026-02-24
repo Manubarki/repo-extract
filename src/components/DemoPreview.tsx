@@ -21,7 +21,7 @@ const DemoPreview = () => {
         {/* Fade overlay at bottom */}
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent z-10 pointer-events-none rounded-b-lg" />
 
-        <div className="bg-card border border-border rounded-lg overflow-hidden shadow-[0_0_40px_hsl(152_68%_50%/0.06)] animate-fade-in">
+        <div className="bg-card border border-border rounded-lg overflow-hidden shadow-[0_0_40px_hsl(152_68%_50%/0.06)] hover:shadow-[0_0_50px_hsl(152_68%_50%/0.12)] transition-all duration-300 animate-fade-in">
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-gradient-to-r from-primary/5 to-accent/5">
             <div className="flex items-center gap-2 font-mono text-sm">
@@ -100,7 +100,7 @@ const DemoPreview = () => {
         ].map((f, i) => (
           <div
             key={f.label}
-            className="text-center p-4 rounded-lg border border-border/50 bg-card/50 animate-fade-in"
+            className="text-center p-4 rounded-lg border border-border/50 bg-card/50 hover:border-primary/40 hover:shadow-[0_0_20px_hsl(152_68%_50%/0.08)] hover:-translate-y-1 transition-all duration-300 animate-fade-in"
             style={{ animationDelay: `${600 + i * 120}ms`, animationFillMode: 'both' }}
           >
             <f.icon className="h-5 w-5 text-primary mx-auto mb-2" />
