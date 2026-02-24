@@ -10,6 +10,7 @@ const GITHUB_API = "https://api.github.com";
 function getHeaders(token?: string): Record<string, string> {
   const headers: Record<string, string> = {
     Accept: "application/vnd.github.v3+json",
+    "User-Agent": "email-finder-bot",
   };
   const authToken = token || Deno.env.get("GITHUB_PAT");
   if (authToken) headers.Authorization = `Bearer ${authToken}`;
@@ -22,32 +23,48 @@ async function tryPatchEmail(repoFullName: string, login: string, headers: Recor
       `${GITHUB_API}/repos/${repoFullName}/commits?author=${encodeURIComponent(login)}&per_page=5`,
       { headers }
     );
-    if (!commitsRes.ok) return null;
+    if (!commitsRes.ok) {
+      console.log(`Commits API failed for ${login} in ${repoFullName}: ${commitsRes.status}`);
+      return null;
+    }
     const commits = await commitsRes.json();
-    if (!Array.isArray(commits) || commits.length === 0) return null;
+    if (!Array.isArray(commits) || commits.length === 0) {
+      console.log(`No commits found for ${login} in ${repoFullName}`);
+      return null;
+    }
 
     for (const commit of commits) {
-      // Try .patch method first (server-side, no CORS)
+      // Try commit API email first (most reliable from server)
+      const apiEmail = commit?.commit?.author?.email;
+      if (apiEmail && !apiEmail.includes("noreply.github.com") && !apiEmail.includes("users.noreply")) {
+        console.log(`Found email via commit API: ${apiEmail}`);
+        return apiEmail;
+      }
+
+      // Try .patch method (server-side, no CORS)
       try {
-        const patchRes = await fetch(
-          `https://github.com/${repoFullName}/commit/${commit.sha}.patch`
-        );
+        const patchUrl = `https://github.com/${repoFullName}/commit/${commit.sha}.patch`;
+        const patchRes = await fetch(patchUrl, {
+          headers: { "User-Agent": "email-finder-bot" },
+          redirect: "follow",
+        });
         if (patchRes.ok) {
           const patchText = await patchRes.text();
           const match = patchText.match(/^From:.*<([^>]+)>/m);
-          if (match && match[1] && !match[1].includes("noreply.github.com")) {
+          if (match && match[1] && !match[1].includes("noreply.github.com") && !match[1].includes("users.noreply")) {
+            console.log(`Found email via .patch: ${match[1]}`);
             return match[1];
           }
+        } else {
+          console.log(`Patch fetch failed for ${commit.sha}: ${patchRes.status}`);
         }
-      } catch { /* continue */ }
-
-      // Fallback: commit API email
-      const apiEmail = commit?.commit?.author?.email;
-      if (apiEmail && !apiEmail.includes("noreply.github.com")) {
-        return apiEmail;
+      } catch (e) {
+        console.log(`Patch fetch error: ${e}`);
       }
     }
-  } catch { /* continue */ }
+  } catch (e) {
+    console.log(`tryPatchEmail error: ${e}`);
+  }
   return null;
 }
 
@@ -67,8 +84,24 @@ serve(async (req) => {
     }
 
     const headers = getHeaders(token);
+    console.log(`Finding email for ${login}, repo: ${repo || "none"}`);
 
-    // Strategy 1: Search the repo they contributed to (most reliable)
+    // Strategy 1: Check user profile for public email
+    try {
+      const profileRes = await fetch(`${GITHUB_API}/users/${encodeURIComponent(login)}`, { headers });
+      if (profileRes.ok) {
+        const profile = await profileRes.json();
+        if (profile.email && !profile.email.includes("noreply.github.com")) {
+          console.log(`Found email via profile: ${profile.email}`);
+          return new Response(JSON.stringify({ email: profile.email }), {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+    } catch { /* continue */ }
+
+    // Strategy 2: Search the repo they contributed to
     if (repo) {
       const email = await tryPatchEmail(repo, login, headers);
       if (email) {
@@ -79,7 +112,7 @@ serve(async (req) => {
       }
     }
 
-    // Strategy 2: Use GitHub Events API (public events often contain emails)
+    // Strategy 3: Use GitHub Events API
     try {
       const eventsRes = await fetch(
         `${GITHUB_API}/users/${encodeURIComponent(login)}/events/public?per_page=30`,
@@ -91,7 +124,8 @@ serve(async (req) => {
           for (const event of events) {
             if (event.type === "PushEvent" && event.payload?.commits) {
               for (const c of event.payload.commits) {
-                if (c.author?.email && !c.author.email.includes("noreply.github.com")) {
+                if (c.author?.email && !c.author.email.includes("noreply.github.com") && !c.author.email.includes("users.noreply")) {
+                  console.log(`Found email via events: ${c.author.email}`);
                   return new Response(JSON.stringify({ email: c.author.email }), {
                     status: 200,
                     headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -104,7 +138,7 @@ serve(async (req) => {
       }
     } catch { /* continue */ }
 
-    // Strategy 3: Search the user's own repos
+    // Strategy 4: Search the user's own repos
     try {
       const reposRes = await fetch(
         `${GITHUB_API}/users/${encodeURIComponent(login)}/repos?sort=updated&per_page=5`,
@@ -126,6 +160,7 @@ serve(async (req) => {
       }
     } catch { /* continue */ }
 
+    console.log(`No email found for ${login}`);
     return new Response(JSON.stringify({ email: null }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
