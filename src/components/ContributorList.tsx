@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { GitHubContributor } from "@/types/github";
+import { GitHubContributor, SocialAccount } from "@/types/github";
 import { Download, Users, ExternalLink, Mail, Loader2 } from "lucide-react";
 import { contributorsToCsv, downloadCsv, findContributorEmail } from "@/lib/github";
 
@@ -172,8 +172,22 @@ const ContributorList = ({ contributors, repoName, loading, progress, enriching,
                   )}
                 </td>
                 <td className="px-5 py-3">
-                  <div className="flex items-center gap-2">
-                    {c.twitter_username && (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {/* Social accounts from API */}
+                    {c.social_accounts && c.social_accounts.length > 0 && c.social_accounts.map((s: SocialAccount, idx: number) => (
+                      <a
+                        key={idx}
+                        href={s.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-primary hover:underline font-mono capitalize"
+                        title={s.provider}
+                      >
+                        {s.provider === "twitter" ? "𝕏" : s.provider}
+                      </a>
+                    ))}
+                    {/* Fallback twitter_username */}
+                    {c.twitter_username && (!c.social_accounts || !c.social_accounts.some((s: SocialAccount) => s.provider === "twitter")) && (
                       <a
                         href={`https://twitter.com/${c.twitter_username}`}
                         target="_blank"
@@ -184,9 +198,11 @@ const ContributorList = ({ contributors, repoName, loading, progress, enriching,
                         𝕏
                       </a>
                     )}
+                    {/* Blog link */}
                     {(() => {
                       const blogUrl = sanitizeBlogUrl(c.blog);
-                      return blogUrl ? (
+                      const hasBlogInSocials = c.social_accounts?.some((s: SocialAccount) => s.url === blogUrl);
+                      return blogUrl && !hasBlogInSocials ? (
                         <a
                           href={blogUrl}
                           target="_blank"
@@ -198,7 +214,8 @@ const ContributorList = ({ contributors, repoName, loading, progress, enriching,
                         </a>
                       ) : null;
                     })()}
-                    {!c.twitter_username && !c.blog && (
+                    {/* Empty state */}
+                    {!c.twitter_username && (!c.social_accounts || c.social_accounts.length === 0) && !c.blog && (
                       <span className="text-xs text-muted-foreground font-mono">—</span>
                     )}
                   </div>

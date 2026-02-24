@@ -163,8 +163,12 @@ export async function enrichContributors(
     const results = await Promise.allSettled(
       batch.map(async (c) => {
         try {
-          const res = await fetchWithRateLimit(`${GITHUB_API}/users/${c.login}`, token);
-          const profile = await res.json();
+          const [profileRes, socialsRes] = await Promise.all([
+            fetchWithRateLimit(`${GITHUB_API}/users/${c.login}`, token),
+            fetchWithRateLimit(`${GITHUB_API}/users/${c.login}/social_accounts`, token).catch(() => null),
+          ]);
+          const profile = await profileRes.json();
+          const socials = socialsRes ? await socialsRes.json() : [];
           return {
             ...c,
             name: profile.name || null,
@@ -174,6 +178,7 @@ export async function enrichContributors(
             blog: profile.blog || null,
             twitter_username: profile.twitter_username || null,
             location: profile.location || null,
+            social_accounts: Array.isArray(socials) ? socials : [],
             enriched: true,
           };
         } catch {
@@ -198,11 +203,13 @@ export async function enrichContributors(
 }
 
 export function contributorsToCsv(contributors: GitHubContributor[], repoName: string): string {
-  const header = "Repository,Username,Full Name,Email,Profile URL,Contributions,Type,Company,Twitter,Blog,Location,Bio\n";
+  const header = "Repository,Username,Full Name,Email,Profile URL,Contributions,Type,Company,Twitter,Blog,Social Links,Location,Bio\n";
   const rows = contributors
     .map(
-      (c) =>
-        `"${repoName}","${c.login}","${c.name || ""}","${c.email || ""}","${c.html_url}",${c.contributions},"${c.isAnonymous ? "Anonymous" : "User"}","${c.company || ""}","${c.twitter_username ? `https://twitter.com/${c.twitter_username}` : ""}","${c.blog || ""}","${c.location || ""}","${(c.bio || "").replace(/"/g, '""')}"`
+      (c) => {
+        const socialLinks = (c.social_accounts || []).map(s => s.url).join(" | ");
+        return `"${repoName}","${c.login}","${c.name || ""}","${c.email || ""}","${c.html_url}",${c.contributions},"${c.isAnonymous ? "Anonymous" : "User"}","${c.company || ""}","${c.twitter_username ? `https://twitter.com/${c.twitter_username}` : ""}","${c.blog || ""}","${socialLinks}","${c.location || ""}","${(c.bio || "").replace(/"/g, '""')}"`;
+      }
     )
     .join("\n");
   return header + rows;
