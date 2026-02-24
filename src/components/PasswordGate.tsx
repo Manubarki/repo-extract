@@ -37,7 +37,7 @@ const PasswordGate = ({ children }: PasswordGateProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4">
+    <div className="fixed inset-0 z-[9999] bg-background flex items-center justify-center px-4">
       <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4 text-center">
         <Lock className="h-10 w-10 text-primary mx-auto" />
         <h1 className="text-xl font-bold font-mono text-foreground">Password Required</h1>
