@@ -39,13 +39,24 @@ const SearchBar = ({ onSearch, loading, token, onTokenChange }: SearchBarProps) 
       </form>
 
       {/* Token input */}
-      <input
-        type="password"
-        value={token}
-        onChange={(e) => onTokenChange(e.target.value)}
-        placeholder="GitHub Personal Access Token (optional)"
-        className="w-full h-12 px-4 bg-card border border-border rounded-lg font-mono text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
-      />
+      <div className="relative">
+        <input
+          type="password"
+          value={token}
+          onChange={(e) => onTokenChange(e.target.value)}
+          placeholder="GitHub Personal Access Token (optional)"
+          className="w-full h-12 px-4 pr-20 bg-card border border-border rounded-lg font-mono text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+        />
+        {token && (
+          <button
+            type="button"
+            onClick={() => onTokenChange("")}
+            className="absolute right-2 top-1/2 -translate-y-1/2 h-8 px-3 text-xs font-mono text-muted-foreground hover:text-destructive transition-colors"
+          >
+            Clear
+          </button>
+        )}
+      </div>
 
       {/* Info text */}
       <div className="space-y-0.5 px-1">
