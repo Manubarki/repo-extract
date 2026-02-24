@@ -16,7 +16,7 @@ const HowItWorks = () => (
       {steps.map((s, i) => (
         <div
           key={s.step}
-          className="relative text-center p-4 rounded-lg border border-border/50 bg-card/50 animate-fade-in"
+          className="relative text-center p-4 rounded-lg border border-border/50 bg-card/50 hover:border-primary/40 hover:shadow-[0_0_20px_hsl(152_68%_50%/0.08)] hover:-translate-y-1 transition-all duration-300 animate-fade-in"
           style={{ animationDelay: `${200 + i * 100}ms`, animationFillMode: 'both' }}
         >
           <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-mono text-sm font-bold mb-3">
