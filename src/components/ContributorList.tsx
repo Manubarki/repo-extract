@@ -52,7 +52,7 @@ const ContributorList = ({ contributors, repoName, loading, progress, enriching,
   const handleFindEmail = async (login: string) => {
     setFindingEmail((prev) => ({ ...prev, [login]: true }));
     try {
-      const email = await findContributorEmail(login, token);
+      const email = await findContributorEmail(login, token, repoName);
       onUpdateContributor?.(login, { email: email || "not found" });
     } catch {
       onUpdateContributor?.(login, { email: "error" });
