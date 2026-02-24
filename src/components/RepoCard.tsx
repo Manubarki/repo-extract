@@ -3,18 +3,18 @@ import { Star, GitFork, Clock } from "lucide-react";
 
 interface RepoCardProps {
   repo: GitHubRepo;
-  onExtract: (repo: GitHubRepo) => void;
-  extracting: boolean;
+  onClick: (repo: GitHubRepo) => void;
   index?: number;
 }
 
-const RepoCard = ({ repo, onExtract, extracting, index = 0 }: RepoCardProps) => {
+const RepoCard = ({ repo, onClick, index = 0 }: RepoCardProps) => {
   return (
     <div
-      className="bg-card border border-border rounded-lg p-5 hover:border-primary/40 hover:shadow-[0_0_20px_hsl(152_68%_50%/0.08)] hover:-translate-y-1 transition-all duration-300 group animate-fade-in"
+      onClick={() => onClick(repo)}
+      className="bg-card border border-border rounded-lg p-5 hover:border-primary/40 hover:shadow-[0_0_20px_hsl(152_68%_50%/0.08)] hover:-translate-y-1 transition-all duration-300 group animate-fade-in cursor-pointer"
       style={{ animationDelay: `${index * 80}ms`, animationFillMode: 'both' }}
     >
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <img
@@ -22,14 +22,9 @@ const RepoCard = ({ repo, onExtract, extracting, index = 0 }: RepoCardProps) => 
               alt={repo.owner.login}
               className="w-5 h-5 rounded-full"
             />
-            <a
-              href={repo.html_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-mono text-sm text-primary hover:underline truncate"
-            >
+            <span className="font-mono text-sm text-primary truncate">
               {repo.full_name}
-            </a>
+            </span>
           </div>
           {repo.description && (
             <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
@@ -54,13 +49,6 @@ const RepoCard = ({ repo, onExtract, extracting, index = 0 }: RepoCardProps) => 
             </span>
           </div>
         </div>
-        <button
-          onClick={() => onExtract(repo)}
-          disabled={extracting}
-          className="shrink-0 px-4 py-2 bg-secondary text-secondary-foreground font-mono text-xs font-medium rounded-md border border-border hover:border-primary/40 hover:text-primary disabled:opacity-40 transition-all"
-        >
-          {extracting ? "Extracting..." : "Extract"}
-        </button>
       </div>
     </div>
   );
