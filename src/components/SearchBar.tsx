@@ -45,6 +45,9 @@ const SearchBar = ({ onSearch, loading, token, onTokenChange }: SearchBarProps) 
           value={token}
           onChange={(e) => onTokenChange(e.target.value)}
           placeholder="GitHub Personal Access Token (optional)"
+          autoComplete="off"
+          data-1p-ignore
+          data-lpignore="true"
           className="w-full h-12 px-4 pr-20 bg-card border border-border rounded-lg font-mono text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
         />
         {token && (
