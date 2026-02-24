@@ -168,6 +168,7 @@ export async function enrichContributors(
           return {
             ...c,
             name: profile.name || null,
+            email: profile.email || c.email || null,
             bio: profile.bio || null,
             company: profile.company || null,
             blog: profile.blog || null,
