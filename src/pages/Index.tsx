@@ -109,8 +109,15 @@ const Index = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background transition-colors duration-300">
-      <div className="absolute top-4 right-4 flex items-center gap-2">
+    <div className="min-h-screen bg-background transition-colors duration-300 relative">
+      <div
+        className="fixed inset-0 z-0 opacity-15 pointer-events-none"
+        style={{
+          backgroundImage: `radial-gradient(circle, hsl(var(--foreground)) 1px, transparent 1px)`,
+          backgroundSize: '20px 20px',
+        }}
+      />
+      <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
         <Popover open={settingsOpen} onOpenChange={setSettingsOpen}>
           <PopoverTrigger asChild>
             <button
@@ -166,7 +173,7 @@ const Index = () => {
         </Popover>
         <ThemeToggle />
       </div>
-      <div className="max-w-4xl mx-auto px-4 py-16">
+      <div className="max-w-4xl mx-auto px-4 py-16 relative z-10">
         {/* Header */}
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-3 mb-4">
