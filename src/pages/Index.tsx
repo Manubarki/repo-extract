@@ -10,7 +10,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 
 
 import { GitHubRepo, GitHubContributor } from "@/types/github";
-import { searchRepos, getContributors, enrichContributors, EnrichControl } from "@/lib/github";
+import { searchRepos, getContributors, enrichContributors, EnrichControl, resetRateLimitIfTokenChanged } from "@/lib/github";
 import { useCallback } from "react";
 
 const Index = () => {
@@ -31,6 +31,7 @@ const Index = () => {
   const handleSearch = async (query: string) => {
     setSearchLoading(true);
     setError(null);
+    resetRateLimitIfTokenChanged(token || undefined);
     setContributors([]);
     setExtractRepoName("");
     try {

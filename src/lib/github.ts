@@ -6,9 +6,20 @@ const GITHUB_API = "https://api.github.com";
 let rateLimitRemaining: number | null = null;
 let rateLimitLimit: number | null = null;
 let rateLimitReset: number | null = null;
-const SAFETY_PERCENT = 0.10; // Keep 10% of quota in reserve
-const MIN_SAFE_REMAINING = 5; // Absolute minimum before stopping
-const THROTTLE_MS = 200; // Small delay between paginated calls
+let lastToken: string | undefined = undefined;
+const SAFETY_PERCENT = 0.10;
+const MIN_SAFE_REMAINING = 5;
+const THROTTLE_MS = 200;
+
+/** Reset cached rate limit when token changes (different quota pool) */
+export function resetRateLimitIfTokenChanged(token?: string) {
+  if (token !== lastToken) {
+    rateLimitRemaining = null;
+    rateLimitLimit = null;
+    rateLimitReset = null;
+    lastToken = token;
+  }
+}
 
 function getSafetyBuffer(): number {
   if (rateLimitLimit !== null) {
