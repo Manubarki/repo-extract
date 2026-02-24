@@ -15,7 +15,10 @@ const Index = () => {
   const [repos, setRepos] = useState<GitHubRepo[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [token, setToken] = useState("");
+  const [token, setToken] = useState(() => {
+    sessionStorage.removeItem("gh_token");
+    return "";
+  });
   const [selectedRepo, setSelectedRepo] = useState<GitHubRepo | null>(null);
 
   const handleSearch = async (query: string) => {
