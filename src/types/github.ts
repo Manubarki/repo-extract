@@ -14,6 +14,11 @@ export interface GitHubRepo {
   updated_at: string;
 }
 
+export interface SocialAccount {
+  provider: string;
+  url: string;
+}
+
 export interface GitHubContributor {
   id: number;
   login: string;
@@ -31,6 +36,7 @@ export interface GitHubContributor {
   location?: string | null;
   enriched?: boolean;
   email?: string | null;
+  social_accounts?: SocialAccount[];
 }
 
 export interface SearchState {
