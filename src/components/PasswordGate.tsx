@@ -37,7 +37,9 @@ const PasswordGate = ({ children }: PasswordGateProps) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-background flex items-center justify-center px-4">
+    <>
+      <div className="pointer-events-none select-none blur-sm opacity-60">{children}</div>
+      <div className="fixed inset-0 z-[9999] bg-background/60 backdrop-blur-sm flex items-center justify-center px-4">
       <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4 text-center">
         <Lock className="h-10 w-10 text-primary mx-auto" />
         <h1 className="text-xl font-bold font-mono text-foreground">Password Required</h1>
@@ -58,7 +60,8 @@ const PasswordGate = ({ children }: PasswordGateProps) => {
           {loading ? "Verifying..." : "Enter"}
         </button>
       </form>
-    </div>
+      </div>
+    </>
   );
 };
 
