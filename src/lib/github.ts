@@ -187,7 +187,8 @@ export function contributorsToCsv(contributors: GitHubContributor[], repoName: s
 
 export async function findContributorEmail(
   login: string,
-  token?: string
+  token?: string,
+  repo?: string
 ): Promise<string | null> {
   const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
   const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -200,7 +201,7 @@ export async function findContributorEmail(
         "Content-Type": "application/json",
         apikey: anonKey,
       },
-      body: JSON.stringify({ login, token }),
+      body: JSON.stringify({ login, token, repo }),
     }
   );
 
