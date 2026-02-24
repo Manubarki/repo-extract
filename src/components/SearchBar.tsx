@@ -1,4 +1,4 @@
-import { Search } from "lucide-react";
+import { Search, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 
 interface SearchBarProps {
@@ -10,6 +10,7 @@ interface SearchBarProps {
 
 const SearchBar = ({ onSearch, loading, token, onTokenChange }: SearchBarProps) => {
   const [query, setQuery] = useState("");
+  const [showToken, setShowToken] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,24 +42,35 @@ const SearchBar = ({ onSearch, loading, token, onTokenChange }: SearchBarProps) 
       {/* Token input */}
       <div className="relative">
         <input
-          type="password"
+          type={showToken ? "text" : "password"}
           value={token}
           onChange={(e) => onTokenChange(e.target.value)}
           placeholder="GitHub Personal Access Token (optional)"
-          autoComplete="off"
+          autoComplete="new-password"
+          name="gh_token_nofill"
           data-1p-ignore
           data-lpignore="true"
-          className="w-full h-12 px-4 pr-20 bg-card border border-border rounded-lg font-mono text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+          data-form-type="other"
+          className="w-full h-12 px-4 pr-24 bg-card border border-border rounded-lg font-mono text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
         />
-        {token && (
+        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
           <button
             type="button"
-            onClick={() => onTokenChange("")}
-            className="absolute right-2 top-1/2 -translate-y-1/2 h-8 px-3 text-xs font-mono text-muted-foreground hover:text-destructive transition-colors"
+            onClick={() => setShowToken(!showToken)}
+            className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
           >
-            Clear
+            {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
-        )}
+          {token && (
+            <button
+              type="button"
+              onClick={() => onTokenChange("")}
+              className="h-8 px-2 text-xs font-mono text-muted-foreground hover:text-destructive transition-colors"
+            >
+              Clear
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Info text */}
