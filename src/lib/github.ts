@@ -189,34 +189,24 @@ export async function findContributorEmail(
   login: string,
   token?: string
 ): Promise<string | null> {
-  // 1. Get user's repos
-  const reposRes = await fetchWithRateLimit(
-    `${GITHUB_API}/users/${login}/repos?sort=updated&per_page=5`,
-    token
-  );
-  const repos = await reposRes.json();
-  if (!Array.isArray(repos) || repos.length === 0) return null;
+  const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+  const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-  // 2. Try each repo to find a commit by this user
-  for (const repo of repos) {
-    try {
-      const commitsRes = await fetchWithRateLimit(
-        `${GITHUB_API}/repos/${repo.full_name}/commits?author=${login}&per_page=1`,
-        token
-      );
-      const commits = await commitsRes.json();
-      if (!Array.isArray(commits) || commits.length === 0) continue;
-
-      // 3. The commit object from the API already contains the author email
-      const email = commits[0]?.commit?.author?.email;
-      if (email && !email.includes("noreply.github.com")) {
-        return email;
-      }
-    } catch {
-      continue;
+  const res = await fetch(
+    `https://${projectId}.supabase.co/functions/v1/find-email`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: anonKey,
+      },
+      body: JSON.stringify({ login, token }),
     }
-  }
-  return null;
+  );
+
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data.email || null;
 }
 
 export function downloadCsv(csv: string, filename: string) {
