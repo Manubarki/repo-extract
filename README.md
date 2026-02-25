@@ -5,7 +5,7 @@ Search GitHub repos · Extract contributors · Enrich profiles · Export CSV
 ## 🚀 How to Use
 
 ### 1. Open the App
-Visit the live app at [manubarki.site](https://manubarki.site).
+Visit the live app at [manubarki.github.io/repo-extract/](https://manubarki.github.io/repo-extract/)).
 
 ### 2. (Optional) Add a GitHub Token
 Click the **key icon** next to the search bar and paste a [GitHub Personal Access Token](https://github.com/settings/tokens).  
