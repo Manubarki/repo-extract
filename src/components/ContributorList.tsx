@@ -32,6 +32,8 @@ const sanitizeBlogUrl = (blog: string | null | undefined): string | null => {
 const ContributorList = ({ contributors, repoName, loading, progress, enriching, enrichProgress, enrichPaused, onTogglePause, onEnrich, token, onUpdateContributor }: ContributorListProps) => {
   const [findingEmail, setFindingEmail] = useState<Record<string, boolean>>({});
   const [locationFilter, setLocationFilter] = useState("");
+  const [bulkFinding, setBulkFinding] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState<{ current: number; total: number } | null>(null);
   if (loading) {
     return (
       <div className="bg-card border border-border rounded-lg p-8 text-center animate-fade-in">
@@ -64,6 +66,28 @@ const ContributorList = ({ contributors, repoName, loading, progress, enriching,
     } finally {
       setFindingEmail((prev) => ({ ...prev, [login]: false }));
     }
+  };
+
+  const handleFindAllEmails = async () => {
+    const needEmail = contributors.filter((c) => !c.email && !c.isAnonymous);
+    if (needEmail.length === 0) return;
+    setBulkFinding(true);
+    setBulkProgress({ current: 0, total: needEmail.length });
+    for (let i = 0; i < needEmail.length; i++) {
+      const c = needEmail[i];
+      setFindingEmail((prev) => ({ ...prev, [c.login]: true }));
+      try {
+        const email = await findContributorEmail(c.login, token, repoName);
+        onUpdateContributor?.(c.login, { email: email || "not found" });
+      } catch {
+        onUpdateContributor?.(c.login, { email: "error" });
+      } finally {
+        setFindingEmail((prev) => ({ ...prev, [c.login]: false }));
+        setBulkProgress({ current: i + 1, total: needEmail.length });
+      }
+    }
+    setBulkFinding(false);
+    setBulkProgress(null);
   };
 
   return (
@@ -105,6 +129,21 @@ const ContributorList = ({ contributors, repoName, loading, progress, enriching,
             Enrich Profiles
           </button>
         )}
+        {/* Find All Emails */}
+        {bulkFinding && bulkProgress ? (
+          <div className="flex items-center gap-2 font-mono text-xs text-muted-foreground">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            <span>Finding emails {bulkProgress.current}/{bulkProgress.total}</span>
+          </div>
+        ) : contributors.some((c) => !c.email && !c.isAnonymous) ? (
+          <button
+            onClick={handleFindAllEmails}
+            className="flex items-center gap-2 px-4 py-2 bg-accent text-primary-foreground font-mono text-xs font-semibold rounded-md hover:opacity-90 transition-opacity"
+          >
+            <Mail className="h-3.5 w-3.5" />
+            Find All Emails
+          </button>
+        ) : null}
         <button
           onClick={handleExport}
           className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground font-mono text-xs font-semibold rounded-md hover:opacity-90 transition-opacity"
