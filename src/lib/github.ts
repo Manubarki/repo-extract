@@ -79,13 +79,18 @@ async function fetchWithRateLimit(url: string, token?: string): Promise<Response
   return res;
 }
 
-export async function searchRepos(query: string, token?: string): Promise<GitHubRepo[]> {
+export interface SearchResult {
+  items: GitHubRepo[];
+  total_count: number;
+}
+
+export async function searchRepos(query: string, token?: string, page: number = 1, perPage: number = 10): Promise<SearchResult> {
   const res = await fetchWithRateLimit(
-    `${GITHUB_API}/search/repositories?q=${encodeURIComponent(query)}&sort=stars&order=desc&per_page=10`,
+    `${GITHUB_API}/search/repositories?q=${encodeURIComponent(query)}&sort=stars&order=desc&per_page=${perPage}&page=${page}`,
     token
   );
   const data = await res.json();
-  return data.items || [];
+  return { items: data.items || [], total_count: data.total_count || 0 };
 }
 
 export async function getContributors(
