@@ -5,7 +5,7 @@ Search GitHub repos · Extract contributors · Enrich profiles · Export CSV
 ## 🚀 How to Use
 
 ### 1. Open the App
-Visit the live app at [repo-extract.lovable.app](https://repo-extract.lovable.app).
+Visit the live app at [manubarki.site](https://manubarki.site).
 
 ### 2. (Optional) Add a GitHub Token
 Click the **key icon** next to the search bar and paste a [GitHub Personal Access Token](https://github.com/settings/tokens).  
