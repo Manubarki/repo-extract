@@ -108,6 +108,7 @@ const ContributorList = ({ contributors, repoName, loading, progress, enriching,
               <th className="px-5 py-3">User</th>
               <th className="px-5 py-3">Contributions</th>
               <th className="px-5 py-3">Email</th>
+              <th className="px-5 py-3">Location</th>
               <th className="px-5 py-3">Socials</th>
               <th className="px-5 py-3">Type</th>
             </tr>
@@ -169,6 +170,13 @@ const ContributorList = ({ contributors, repoName, loading, progress, enriching,
                       <Mail className="h-3 w-3" />
                       Find
                     </button>
+                  )}
+                </td>
+                <td className="px-5 py-3">
+                  {c.location ? (
+                    <span className="font-mono text-xs text-foreground truncate max-w-[120px] inline-block" title={c.location}>{c.location}</span>
+                  ) : (
+                    <span className="text-xs text-muted-foreground font-mono">—</span>
                   )}
                 </td>
                 <td className="px-5 py-3">
