@@ -31,6 +31,7 @@ const sanitizeBlogUrl = (blog: string | null | undefined): string | null => {
 
 const ContributorList = ({ contributors, repoName, loading, progress, enriching, enrichProgress, enrichPaused, onTogglePause, onEnrich, token, onUpdateContributor }: ContributorListProps) => {
   const [findingEmail, setFindingEmail] = useState<Record<string, boolean>>({});
+  const [locationFilter, setLocationFilter] = useState("");
   if (loading) {
     return (
       <div className="bg-card border border-border rounded-lg p-8 text-center animate-fade-in">
@@ -43,6 +44,10 @@ const ContributorList = ({ contributors, repoName, loading, progress, enriching,
   }
 
   if (contributors.length === 0) return null;
+
+  const filtered = locationFilter.trim()
+    ? contributors.filter((c) => c.location?.toLowerCase().includes(locationFilter.trim().toLowerCase()))
+    : contributors;
 
   const handleExport = () => {
     const csv = contributorsToCsv(contributors, repoName);
@@ -66,10 +71,17 @@ const ContributorList = ({ contributors, repoName, loading, progress, enriching,
       <div className="flex flex-wrap items-center gap-3 px-5 py-4 border-b border-border bg-gradient-to-r from-primary/5 to-accent/5">
         <div className="flex items-center gap-2 font-mono text-sm min-w-0 flex-1">
           <Users className="h-4 w-4 text-primary shrink-0" />
-          <span className="text-foreground font-semibold">{contributors.length}</span>
+          <span className="text-foreground font-semibold">{filtered.length}{locationFilter ? `/${contributors.length}` : ""}</span>
           <span className="text-muted-foreground">in</span>
           <span className="text-accent truncate">{repoName}</span>
         </div>
+        <input
+          type="text"
+          value={locationFilter}
+          onChange={(e) => setLocationFilter(e.target.value)}
+          placeholder="Filter by location…"
+          className="px-3 py-1.5 text-xs font-mono bg-background border border-border rounded-md w-40 focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground"
+        />
         {enriching && enrichProgress && (
           <div className="flex items-center gap-2 font-mono text-xs text-muted-foreground">
             <span>{enrichPaused ? "paused" : "enriching"} {enrichProgress.current}/{enrichProgress.total}</span>
@@ -114,7 +126,7 @@ const ContributorList = ({ contributors, repoName, loading, progress, enriching,
             </tr>
           </thead>
           <tbody>
-            {contributors.map((c, i) => (
+            {filtered.map((c, i) => (
               <tr
                 key={`${c.login}-${i}`}
                 className="border-t border-border hover:bg-secondary/50 transition-all duration-200 animate-fade-in"
