@@ -18,24 +18,27 @@ const Index = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [currentQuery, setCurrentQuery] = useState("");
+  const [currentPerPage, setCurrentPerPage] = useState(DEFAULT_PER_PAGE);
   const [searchLoading, setSearchLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [parsedNotice, setParsedNotice] = useState<string | null>(null);
   const [token, setToken] = useState(() => {
     sessionStorage.removeItem("gh_token");
     return "";
   });
   const [selectedRepo, setSelectedRepo] = useState<GitHubRepo | null>(null);
 
-  const doSearch = async (query: string, page: number) => {
+  const doSearch = async (query: string, page: number, perPage: number = currentPerPage) => {
     setSearchLoading(true);
     setError(null);
     resetRateLimitIfTokenChanged(token || undefined);
     try {
-      const result = await searchRepos(query, token || undefined, page, PER_PAGE);
+      const result = await searchRepos(query, token || undefined, page, perPage);
       setRepos(result.items);
       setTotalCount(result.total_count);
       setCurrentPage(page);
       setCurrentQuery(query);
+      setCurrentPerPage(perPage);
       if (result.items.length === 0) setError("No repositories found.");
     } catch (e: any) {
       setError(e.message);
@@ -44,8 +47,16 @@ const Index = () => {
     }
   };
 
-  const handleSearch = (query: string) => doSearch(query, 1);
-  const totalPages = Math.min(Math.ceil(totalCount / PER_PAGE), 100); // GitHub API caps at 1000 results
+  const handleSearch = (rawQuery: string) => {
+    const parsed = parseNaturalQuery(rawQuery);
+    if (parsed.isTopQuery) {
+      setParsedNotice(`Showing top ${parsed.perPage} repos for "${parsed.topic?.replace(/-/g, " ")}" sorted by stars`);
+    } else {
+      setParsedNotice(null);
+    }
+    doSearch(parsed.query, 1, parsed.perPage);
+  };
+  const totalPages = Math.min(Math.ceil(totalCount / currentPerPage), 100); // GitHub API caps at 1000 results
 
   return (
     <div className="min-h-screen bg-background transition-colors duration-300 relative">
