@@ -9,7 +9,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import RepoDialog from "@/components/RepoDialog";
 
 import { GitHubRepo } from "@/types/github";
-import { searchRepos, resetRateLimitIfTokenChanged, parseNaturalQuery } from "@/lib/github";
+import { searchRepos, resetRateLimitIfTokenChanged, parseNaturalQuery, expandTopQuery } from "@/lib/github";
 
 const DEFAULT_PER_PAGE = 10;
 
@@ -19,6 +19,7 @@ const Index = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [currentQuery, setCurrentQuery] = useState("");
   const [currentPerPage, setCurrentPerPage] = useState(DEFAULT_PER_PAGE);
+  const [currentSort, setCurrentSort] = useState<"stars" | "best-match">("stars");
   const [searchLoading, setSearchLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [parsedNotice, setParsedNotice] = useState<string | null>(null);
@@ -28,18 +29,26 @@ const Index = () => {
   });
   const [selectedRepo, setSelectedRepo] = useState<GitHubRepo | null>(null);
 
-  const doSearch = async (query: string, page: number, perPage: number = currentPerPage) => {
+  const doSearch = async (
+    query: string,
+    page: number,
+    perPage: number = currentPerPage,
+    sort: "stars" | "best-match" = currentSort,
+    postProcess?: (items: GitHubRepo[]) => GitHubRepo[]
+  ) => {
     setSearchLoading(true);
     setError(null);
     resetRateLimitIfTokenChanged(token || undefined);
     try {
-      const result = await searchRepos(query, token || undefined, page, perPage);
-      setRepos(result.items);
+      const result = await searchRepos(query, token || undefined, page, perPage, sort);
+      const items = postProcess ? postProcess(result.items) : result.items;
+      setRepos(items);
       setTotalCount(result.total_count);
       setCurrentPage(page);
       setCurrentQuery(query);
       setCurrentPerPage(perPage);
-      if (result.items.length === 0) setError("No repositories found.");
+      setCurrentSort(sort);
+      if (items.length === 0) setError("No repositories found.");
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -47,15 +56,34 @@ const Index = () => {
     }
   };
 
-  const handleSearch = (rawQuery: string) => {
+  const handleSearch = async (rawQuery: string) => {
     const parsed = parseNaturalQuery(rawQuery);
-    if (parsed.isTopQuery) {
-      setParsedNotice(`Showing top ${parsed.perPage} repos for "${parsed.topic?.replace(/-/g, " ")}" sorted by stars`);
-    } else {
+    if (!parsed.isTopQuery) {
       setParsedNotice(null);
+      return doSearch(parsed.query, 1, parsed.perPage, "stars");
     }
-    doSearch(parsed.query, 1, parsed.perPage);
+    setSearchLoading(true);
+    setError(null);
+    try {
+      const expanded = await expandTopQuery(parsed.subject!);
+      const topicLabel = expanded.topics.length ? expanded.topics.join(", ") : parsed.subject;
+      setParsedNotice(
+        `✨ Top ${parsed.perPage} relevant repos for "${parsed.subject}" — semantic match (${topicLabel}), then ranked by stars`
+      );
+      const poolSize = Math.min(parsed.perPage * 4, 50);
+      await doSearch(
+        expanded.query,
+        1,
+        poolSize,
+        "best-match",
+        (items) => [...items].sort((a, b) => b.stargazers_count - a.stargazers_count).slice(0, parsed.perPage)
+      );
+    } catch (e: any) {
+      setError(e.message || "Failed to expand query");
+      setSearchLoading(false);
+    }
   };
+
   const totalPages = Math.min(Math.ceil(totalCount / currentPerPage), 100); // GitHub API caps at 1000 results
 
   return (
