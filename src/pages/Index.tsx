@@ -9,9 +9,9 @@ import ThemeToggle from "@/components/ThemeToggle";
 import RepoDialog from "@/components/RepoDialog";
 
 import { GitHubRepo } from "@/types/github";
-import { searchRepos, resetRateLimitIfTokenChanged } from "@/lib/github";
+import { searchRepos, resetRateLimitIfTokenChanged, parseNaturalQuery } from "@/lib/github";
 
-const PER_PAGE = 10;
+const DEFAULT_PER_PAGE = 10;
 
 const Index = () => {
   const [repos, setRepos] = useState<GitHubRepo[]>([]);
