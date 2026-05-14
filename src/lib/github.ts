@@ -84,6 +84,36 @@ export interface SearchResult {
   total_count: number;
 }
 
+export interface ParsedQuery {
+  query: string;
+  perPage: number;
+  isTopQuery: boolean;
+  topic?: string;
+}
+
+/**
+ * Parse natural-language queries like:
+ *   "top 10 repos in cloud infra"
+ *   "best 5 repositories for machine learning"
+ *   "top repos about web scraping"
+ * into a GitHub search query string + page size.
+ */
+export function parseNaturalQuery(input: string): ParsedQuery {
+  const raw = input.trim();
+  const re = /^\s*(?:top|best|popular)\s+(?:(\d{1,3})\s+)?(?:repos?|repositories)\s+(?:in|for|about|on|related to)\s+(.+?)\s*$/i;
+  const m = raw.match(re);
+  if (!m) {
+    return { query: raw, perPage: 10, isTopQuery: false };
+  }
+  const n = m[1] ? Math.min(Math.max(parseInt(m[1], 10), 1), 100) : 10;
+  const subject = m[2].trim().replace(/[?.!]+$/, "");
+  // Convert subject into a topic slug ("cloud infra" -> "cloud-infra") AND keep keyword fallback.
+  const topic = subject.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+  // Use both topic filter and keywords so we get good coverage.
+  const query = `${subject} topic:${topic} stars:>100`;
+  return { query, perPage: n, isTopQuery: true, topic };
+}
+
 export async function searchRepos(query: string, token?: string, page: number = 1, perPage: number = 10): Promise<SearchResult> {
   const res = await fetchWithRateLimit(
     `${GITHUB_API}/search/repositories?q=${encodeURIComponent(query)}&sort=stars&order=desc&per_page=${perPage}&page=${page}`,
