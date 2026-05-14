@@ -26,7 +26,7 @@ const SearchBar = ({ onSearch, loading, token, onTokenChange }: SearchBarProps) 
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search GitHub repositories..."
+            placeholder='Search repos or try "top 10 repos in cloud infra"'
             className="w-full h-14 pl-12 pr-28 bg-card border border-border rounded-lg font-mono text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
           />
           <button
