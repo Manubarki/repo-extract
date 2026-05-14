@@ -97,6 +97,13 @@ const Index = () => {
           />
         </div>
 
+        {/* Parsed natural-language notice */}
+        {parsedNotice && !error && (
+          <div className="mb-4 px-4 py-2 bg-primary/10 border border-primary/30 rounded-lg text-primary text-xs font-mono text-center">
+            ✨ {parsedNotice}
+          </div>
+        )}
+
         {/* Error */}
         {error && (
           <div className="mb-6 px-4 py-3 bg-destructive/10 border border-destructive/30 rounded-lg text-destructive text-sm font-mono text-center">
