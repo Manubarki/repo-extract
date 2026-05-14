@@ -107,11 +107,10 @@ export function parseNaturalQuery(input: string): ParsedQuery {
   }
   const n = m[1] ? Math.min(Math.max(parseInt(m[1], 10), 1), 100) : 10;
   const subject = m[2].trim().replace(/[?.!]+$/, "");
-  // Convert subject into a topic slug ("cloud infra" -> "cloud-infra") AND keep keyword fallback.
-  const topic = subject.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-  // Use both topic filter and keywords so we get good coverage.
-  const query = `${subject} topic:${topic} stars:>100`;
-  return { query, perPage: n, isTopQuery: true, topic };
+  // Use keywords across name/description/readme/topics, with a stars floor to surface popular repos.
+  // Avoid forcing a specific topic slug — most multi-word phrases (e.g. "cloud infra") aren't valid topics.
+  const query = `${subject} in:name,description,topics,readme stars:>50`;
+  return { query, perPage: n, isTopQuery: true, topic: subject };
 }
 
 export async function searchRepos(query: string, token?: string, page: number = 1, perPage: number = 10): Promise<SearchResult> {
