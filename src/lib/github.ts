@@ -88,34 +88,49 @@ export interface ParsedQuery {
   query: string;
   perPage: number;
   isTopQuery: boolean;
-  topic?: string;
+  subject?: string;
 }
 
 /**
- * Parse natural-language queries like:
- *   "top 10 repos in cloud infra"
- *   "best 5 repositories for machine learning"
- *   "top repos about web scraping"
- * into a GitHub search query string + page size.
+ * Parse "top N repos in/for/about X" → subject. We do NOT build the GitHub
+ * query here for top queries — the caller should call `expandTopQuery` so
+ * Lovable AI can produce a semantically rich query.
  */
 export function parseNaturalQuery(input: string): ParsedQuery {
   const raw = input.trim();
   const re = /^\s*(?:top|best|popular)\s+(?:(\d{1,3})\s+)?(?:repos?|repositories)\s+(?:in|for|about|on|related to)\s+(.+?)\s*$/i;
   const m = raw.match(re);
-  if (!m) {
-    return { query: raw, perPage: 10, isTopQuery: false };
-  }
+  if (!m) return { query: raw, perPage: 10, isTopQuery: false };
   const n = m[1] ? Math.min(Math.max(parseInt(m[1], 10), 1), 100) : 10;
   const subject = m[2].trim().replace(/[?.!]+$/, "");
-  // Use keywords across name/description/readme/topics, with a stars floor to surface popular repos.
-  // Avoid forcing a specific topic slug — most multi-word phrases (e.g. "cloud infra") aren't valid topics.
-  const query = `${subject} in:name,description,topics,readme stars:>50`;
-  return { query, perPage: n, isTopQuery: true, topic: subject };
+  return { query: subject, perPage: n, isTopQuery: true, subject };
 }
 
-export async function searchRepos(query: string, token?: string, page: number = 1, perPage: number = 10): Promise<SearchResult> {
+export async function expandTopQuery(subject: string): Promise<{ query: string; keywords: string[]; topics: string[] }> {
+  const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+  const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  const res = await fetch(`https://${projectId}.supabase.co/functions/v1/expand-query`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", apikey: anonKey },
+    body: JSON.stringify({ subject }),
+  });
+  if (!res.ok) {
+    // Fallback: just use the raw subject + stars floor
+    return { query: `${subject} stars:>50`, keywords: [subject], topics: [] };
+  }
+  return await res.json();
+}
+
+export async function searchRepos(
+  query: string,
+  token?: string,
+  page: number = 1,
+  perPage: number = 10,
+  sort: "stars" | "best-match" = "stars"
+): Promise<SearchResult> {
+  const sortParam = sort === "stars" ? "&sort=stars&order=desc" : ""; // omit for best match
   const res = await fetchWithRateLimit(
-    `${GITHUB_API}/search/repositories?q=${encodeURIComponent(query)}&sort=stars&order=desc&per_page=${perPage}&page=${page}`,
+    `${GITHUB_API}/search/repositories?q=${encodeURIComponent(query)}${sortParam}&per_page=${perPage}&page=${page}`,
     token
   );
   const data = await res.json();
