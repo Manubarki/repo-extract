@@ -62,21 +62,21 @@ Deno.serve(async (req) => {
       parsed = {};
     }
 
-    const keywords = (parsed.keywords || []).filter((k) => typeof k === "string").slice(0, 5);
+    // GitHub Search API caps queries at 5 AND/OR/NOT operators total.
+    // Keep the combined OR group small: up to 3 keywords + 2 topics = 4 ORs.
+    const keywords = (parsed.keywords || []).filter((k) => typeof k === "string").slice(0, 3);
     const topics = (parsed.topics || [])
       .filter((t) => typeof t === "string")
       .map((t) => t.toLowerCase().trim().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""))
       .filter(Boolean)
-      .slice(0, 5);
+      .slice(0, 2);
 
-    // GitHub ANDs terms by default — quoting many phrases yields 0 results.
-    // OR-join keywords and topics so any match counts; rely on best-match relevance.
-    const kwPart = keywords.length
-      ? keywords.map((k) => (k.includes(" ") ? `"${k}"` : k)).join(" OR ")
-      : subject;
-    const query = topics.length
-      ? `(${kwPart} OR ${topics.map((t) => `topic:${t}`).join(" OR ")}) stars:>100`
-      : `${kwPart} stars:>100`;
+    const kwTerms = (keywords.length ? keywords : [subject]).map((k) =>
+      k.includes(" ") ? `"${k}"` : k
+    );
+    const topicTerms = topics.map((t) => `topic:${t}`);
+    const allTerms = [...kwTerms, ...topicTerms];
+    const query = `${allTerms.join(" OR ")} stars:>100`;
 
     return new Response(JSON.stringify({ query, keywords, topics }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
