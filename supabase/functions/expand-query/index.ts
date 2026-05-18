@@ -62,8 +62,9 @@ Deno.serve(async (req) => {
       parsed = {};
     }
 
-    // GitHub Search API caps queries at 5 AND/OR/NOT operators total.
-    // Keep the combined OR group small: up to 3 keywords + 2 topics = 4 ORs.
+    // GitHub's Search API can return zero results when `OR` mixes free-text
+    // phrases with qualifiers like `topic:`. Keep the executable query keyword-
+    // only, and return topics separately for UI context/future fallback use.
     const keywords = (parsed.keywords || []).filter((k) => typeof k === "string").slice(0, 3);
     const topics = (parsed.topics || [])
       .filter((t) => typeof t === "string")
@@ -74,9 +75,7 @@ Deno.serve(async (req) => {
     const kwTerms = (keywords.length ? keywords : [subject]).map((k) =>
       k.includes(" ") ? `"${k}"` : k
     );
-    const topicTerms = topics.map((t) => `topic:${t}`);
-    const allTerms = [...kwTerms, ...topicTerms];
-    const query = `${allTerms.join(" OR ")} stars:>100`;
+    const query = `${kwTerms.join(" OR ")} stars:>100`;
 
     return new Response(JSON.stringify({ query, keywords, topics }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
