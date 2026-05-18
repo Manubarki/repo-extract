@@ -69,12 +69,14 @@ Deno.serve(async (req) => {
       .filter(Boolean)
       .slice(0, 5);
 
-    // Build a query: quoted keywords for relevance + topic OR group + stars floor.
+    // GitHub ANDs terms by default — quoting many phrases yields 0 results.
+    // OR-join keywords and topics so any match counts; rely on best-match relevance.
     const kwPart = keywords.length
-      ? keywords.map((k) => (k.includes(" ") ? `"${k}"` : k)).join(" ")
+      ? keywords.map((k) => (k.includes(" ") ? `"${k}"` : k)).join(" OR ")
       : subject;
-    const topicPart = topics.length ? ` (${topics.map((t) => `topic:${t}`).join(" OR ")})` : "";
-    const query = `${kwPart}${topicPart} stars:>50`;
+    const query = topics.length
+      ? `(${kwPart} OR ${topics.map((t) => `topic:${t}`).join(" OR ")}) stars:>100`
+      : `${kwPart} stars:>100`;
 
     return new Response(JSON.stringify({ query, keywords, topics }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
